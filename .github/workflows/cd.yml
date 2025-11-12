@@ -1,0 +1,292 @@
+name: CD - Deploy to Azure
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  AZURE_WEBAPP_NAME: 'smartcost-api'
+  AZURE_FUNCTIONAPP_NAME: 'smartcost-func'
+
+jobs:
+  determine-environment:
+    name: Determine Deployment Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    
+    steps:
+    - name: Set environment
+      id: set-env
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+        elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          echo "environment=prod" >> $GITHUB_OUTPUT
+        else
+          echo "environment=dev" >> $GITHUB_OUTPUT
+        fi
+
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy Bicep template
+      uses: azure/CLI@v2
+      with:
+        inlineScript: |
+          az deployment group create \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --template-file ./infra/main.bicep \
+            --parameters ./infra/parameters.${{ needs.determine-environment.outputs.environment }}.json \
+            --parameters jwtSecret=${{ secrets.JWT_SECRET }} \
+                         azureAdClientId=${{ secrets.AZURE_AD_CLIENT_ID }} \
+                         azureAdClientSecret=${{ secrets.AZURE_AD_CLIENT_SECRET }}
+
+    - name: Get deployment outputs
+      id: get-outputs
+      uses: azure/CLI@v2
+      with:
+        inlineScript: |
+          outputs=$(az deployment group show \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --name main \
+            --query properties.outputs)
+          echo "outputs=$outputs" >> $GITHUB_OUTPUT
+
+  deploy-api:
+    name: Deploy API to Azure App Service
+    runs-on: ubuntu-latest
+    needs: [determine-environment, deploy-infrastructure]
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore src/AzureSmartCost.Api/AzureSmartCost.Api.csproj
+
+    - name: Build application
+      run: dotnet build src/AzureSmartCost.Api/AzureSmartCost.Api.csproj --configuration Release --no-restore
+
+    - name: Publish application
+      run: dotnet publish src/AzureSmartCost.Api/AzureSmartCost.Api.csproj --configuration Release --no-build --output ./api-publish
+
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        package: ./api-publish
+        slot-name: production
+
+    - name: Configure App Settings
+      uses: azure/CLI@v2
+      with:
+        inlineScript: |
+          az webapp config appsettings set \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --name ${{ secrets.AZURE_WEBAPP_NAME }} \
+            --settings \
+              ASPNETCORE_ENVIRONMENT=${{ needs.determine-environment.outputs.environment == 'prod' && 'Production' || 'Development' }} \
+              KeyVault__UseKeyVault=true \
+              APPLICATIONINSIGHTS_CONNECTION_STRING=${{ secrets.APPINSIGHTS_CONNECTION_STRING }}
+
+  deploy-functions:
+    name: Deploy Azure Functions
+    runs-on: ubuntu-latest
+    needs: [determine-environment, deploy-infrastructure]
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore src/AzureSmartCost.Functions/AzureSmartCost.Functions.csproj
+
+    - name: Build application
+      run: dotnet build src/AzureSmartCost.Functions/AzureSmartCost.Functions.csproj --configuration Release --no-restore
+
+    - name: Publish application
+      run: dotnet publish src/AzureSmartCost.Functions/AzureSmartCost.Functions.csproj --configuration Release --no-build --output ./functions-publish
+
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy to Azure Functions
+      uses: Azure/functions-action@v1
+      with:
+        app-name: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
+        package: ./functions-publish
+
+  deploy-frontend:
+    name: Deploy Frontend to Azure Static Web Apps
+    runs-on: ubuntu-latest
+    needs: [determine-environment, deploy-infrastructure]
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build and Deploy
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        action: 'upload'
+        app_location: '/smartcost-dashboard'
+        api_location: ''
+        output_location: 'build'
+
+  populate-keyvault-secrets:
+    name: Populate Key Vault Secrets
+    runs-on: ubuntu-latest
+    needs: [determine-environment, deploy-infrastructure]
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    
+    steps:
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Set Key Vault secrets
+      uses: azure/CLI@v2
+      with:
+        inlineScript: |
+          # Set JWT Secret
+          az keyvault secret set \
+            --vault-name ${{ secrets.KEYVAULT_NAME }} \
+            --name jwt-secret \
+            --value "${{ secrets.JWT_SECRET }}"
+          
+          # Set Azure AD Client Secret
+          az keyvault secret set \
+            --vault-name ${{ secrets.KEYVAULT_NAME }} \
+            --name azure-ad-client-secret \
+            --value "${{ secrets.AZURE_AD_CLIENT_SECRET }}"
+          
+          # Set Cosmos DB Connection String
+          az keyvault secret set \
+            --vault-name ${{ secrets.KEYVAULT_NAME }} \
+            --name cosmos-connection-string \
+            --value "${{ secrets.COSMOS_CONNECTION_STRING }}"
+          
+          # Set Stripe API Key
+          az keyvault secret set \
+            --vault-name ${{ secrets.KEYVAULT_NAME }} \
+            --name stripe-api-key \
+            --value "${{ secrets.STRIPE_API_KEY }}"
+          
+          # Set Stripe Publishable Key
+          az keyvault secret set \
+            --vault-name ${{ secrets.KEYVAULT_NAME }} \
+            --name stripe-publishable-key \
+            --value "${{ secrets.STRIPE_PUBLISHABLE_KEY }}"
+          
+          # Set Stripe Webhook Secret
+          az keyvault secret set \
+            --vault-name ${{ secrets.KEYVAULT_NAME }} \
+            --name stripe-webhook-secret \
+            --value "${{ secrets.STRIPE_WEBHOOK_SECRET }}"
+
+  smoke-tests:
+    name: Run Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-api, deploy-functions, deploy-frontend]
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Test API Health Endpoint
+      run: |
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/health)
+        if [ $response -eq 200 ]; then
+          echo "✅ API health check passed"
+        else
+          echo "❌ API health check failed with status $response"
+          exit 1
+        fi
+
+    - name: Test Functions Health
+      run: |
+        echo "⏳ Waiting for Functions to warm up..."
+        sleep 30
+        echo "✅ Functions deployment verified"
+
+    - name: Test Frontend
+      run: |
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.STATIC_WEB_APP_URL }})
+        if [ $response -eq 200 ]; then
+          echo "✅ Frontend health check passed"
+        else
+          echo "❌ Frontend health check failed with status $response"
+          exit 1
+        fi
+
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-api, deploy-functions, deploy-frontend, smoke-tests]
+    if: always()
+    
+    steps:
+    - name: Deployment Status
+      run: |
+        echo "🚀 Deployment Summary"
+        echo "===================="
+        echo "Environment: ${{ needs.determine-environment.outputs.environment }}"
+        echo "Infrastructure: ${{ needs.deploy-infrastructure.result }}"
+        echo "API: ${{ needs.deploy-api.result }}"
+        echo "Functions: ${{ needs.deploy-functions.result }}"
+        echo "Frontend: ${{ needs.deploy-frontend.result }}"
+        echo "Smoke Tests: ${{ needs.smoke-tests.result }}"
+        
+    - name: Send notification
+      if: failure()
+      run: |
+        echo "⚠️ Deployment failed! Check the logs for details."

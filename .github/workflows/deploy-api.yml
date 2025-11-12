@@ -1,0 +1,66 @@
+name: Deploy API to Azure App Service
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'src/AzureSmartCost.Api/**'
+      - 'src/AzureSmartCost.Shared/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: 'smartcost-api-prod'    # Set this to your application's name
+  AZURE_WEBAPP_PACKAGE_PATH: './src/AzureSmartCost.Api'      # Set this to the path to your web app project
+  DOTNET_VERSION: '8.0.x'                    # Set this to the .NET Core version to use
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: 🔍 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: 📦 Restore dependencies
+      run: |
+        dotnet restore ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        dotnet restore ./src/AzureSmartCost.Shared
+
+    - name: 🏗️ Build application
+      run: |
+        dotnet build ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} --configuration Release --no-restore
+
+    - name: 🧪 Run tests
+      run: |
+        # Add test projects when available
+        # dotnet test --configuration Release --no-build --verbosity normal
+
+    - name: 📦 Publish application
+      run: |
+        dotnet publish ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} --configuration Release --no-build --output ./publish
+
+    - name: 🚀 Deploy to Azure App Service
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: './publish'
+
+    - name: ✅ Deployment notification
+      if: success()
+      run: |
+        echo "🎉 API deployment to Azure App Service completed successfully!"
+        echo "🔗 Application URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo "📋 Swagger UI: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/swagger"
+
+    - name: ❌ Deployment failed notification
+      if: failure()
+      run: |
+        echo "❌ API deployment failed. Please check the logs for details."

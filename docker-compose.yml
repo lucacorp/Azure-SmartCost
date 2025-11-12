@@ -1,0 +1,75 @@
+# Docker Compose para desenvolvimento local do Azure SmartCost
+version: '3.8'
+
+services:
+  cosmosdb:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
+    container_name: smartcost-cosmos-emulator
+    ports:
+      - "8081:8081"
+      - "10251:10251"
+      - "10252:10252"
+      - "10253:10253"
+      - "10254:10254"
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+    volumes:
+      - cosmos-data:/data/db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "https://localhost:8081/_explorer/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - smartcost-network
+
+  api:
+    build:
+      context: ../src/AzureSmartCost.Api
+      dockerfile: Dockerfile
+    container_name: smartcost-api
+    ports:
+      - "5000:80"
+      - "5001:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=password
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/aspnetapp.pfx
+      - ConnectionStrings__CosmosDb=AccountEndpoint=https://cosmosdb:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+      - CosmosDb__DatabaseName=smartcostdb
+      - CosmosDb__ContainerName=costrecords
+      - Jwt__Secret=SmartCost-Development-Secret-Key-2024
+      - Jwt__Issuer=AzureSmartCost
+      - Jwt__Audience=AzureSmartCost-API
+    depends_on:
+      cosmosdb:
+        condition: service_healthy
+    networks:
+      - smartcost-network
+    volumes:
+      - ../certificates:/app/certificates:ro
+
+  frontend:
+    build:
+      context: ../smartcost-dashboard
+      dockerfile: Dockerfile
+    container_name: smartcost-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_BASE_URL=https://localhost:5001/api
+      - REACT_APP_ENVIRONMENT=development
+    depends_on:
+      - api
+    networks:
+      - smartcost-network
+
+volumes:
+  cosmos-data:
+    driver: local
+
+networks:
+  smartcost-network:
+    driver: bridge

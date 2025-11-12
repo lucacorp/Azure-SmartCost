@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "East US"
+    },
+    "environmentName": {
+      "value": "prod"
+    },
+    "projectName": {
+      "value": "smartcost"
+    },
+    "appServiceSku": {
+      "value": "S1"
+    },
+    "jwtSecret": {
+      "value": "PRODUCTION-JWT-SECRET-CHANGE-THIS"
+    },
+    "azureAdClientId": {
+      "value": "production-azure-ad-client-id"
+    },
+    "azureAdClientSecret": {
+      "value": "production-azure-ad-client-secret"
+    }
+  }
+}

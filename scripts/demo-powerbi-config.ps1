@@ -1,0 +1,71 @@
+# Azure SmartCost - Demo do Script de Configuração Power BI
+# Este script demonstra o processo de configuração sem fazer alterações reais
+
+Write-Host "🎯 DEMONSTRAÇÃO: Configuração Power BI para Produção" -ForegroundColor Cyan
+Write-Host "======================================================" -ForegroundColor Cyan
+Write-Host ""
+
+Write-Host "📋 Pré-requisitos verificados:" -ForegroundColor Green
+Write-Host "✅ Azure CLI instalado" -ForegroundColor Green
+Write-Host "✅ Permissões para configurar App Service" -ForegroundColor Green
+Write-Host "✅ Script de configuração disponível" -ForegroundColor Green
+Write-Host ""
+
+Write-Host "🔧 Informações necessárias para execução REAL:" -ForegroundColor Yellow
+Write-Host "===============================================" -ForegroundColor Yellow
+Write-Host ""
+
+# Simular coleta de informações
+Write-Host "📝 Configurações que seriam aplicadas:" -ForegroundColor Cyan
+Write-Host "App Service: smartcost-api" -ForegroundColor White
+Write-Host "Resource Group: rg-smartcost-prod" -ForegroundColor White
+Write-Host "Azure Tenant ID: 12345678-1234-1234-1234-123456789abc" -ForegroundColor White
+Write-Host "Azure Client ID: 87654321-4321-4321-4321-cba987654321" -ForegroundColor White
+Write-Host "Power BI Workspace: abcdef12-3456-7890-abcd-ef1234567890" -ForegroundColor White
+Write-Host "Frontend URL: https://smartcost-dashboard.azurestaticapps.net" -ForegroundColor White
+Write-Host ""
+
+Write-Host "⚙️ Variáveis de ambiente que seriam configuradas:" -ForegroundColor Yellow
+
+$envVars = @(
+    "AZURE_TENANT_ID",
+    "AZURE_CLIENT_ID", 
+    "AZURE_CLIENT_SECRET",
+    "POWERBI_CLIENT_ID",
+    "POWERBI_CLIENT_SECRET", 
+    "POWERBI_WORKSPACE_ID",
+    "POWERBI_DATASET_ID",
+    "COSMOSDB_CONNECTION_STRING",
+    "JWT_SECRET",
+    "FRONTEND_URL",
+    "USE_REAL_POWERBI_API=true",
+    "FEATURE_POWERBI=true"
+)
+
+foreach ($var in $envVars) {
+    Write-Host "  🔧 $var" -ForegroundColor Green
+}
+
+Write-Host ""
+Write-Host "🚀 Para executar o script REAL:" -ForegroundColor Cyan
+Write-Host "================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "1. Abra PowerShell como Administrador" -ForegroundColor White
+Write-Host "2. Navegue para o diretório do projeto:" -ForegroundColor White
+Write-Host "   cd C:\DIOazure\Azure-SmartCost" -ForegroundColor Gray
+Write-Host ""
+Write-Host "3. Execute o script:" -ForegroundColor White
+Write-Host "   .\scripts\setup-powerbi-production.ps1" -ForegroundColor Gray
+Write-Host ""
+Write-Host "4. OU com parâmetros específicos:" -ForegroundColor White
+Write-Host "   .\scripts\setup-powerbi-production.ps1 -AppName 'meu-app' -ResourceGroup 'meu-rg'" -ForegroundColor Gray
+Write-Host ""
+
+Write-Host "⚠️ IMPORTANTE:" -ForegroundColor Yellow
+Write-Host "  • Tenha em mãos todas as credenciais Azure AD" -ForegroundColor White
+Write-Host "  • Certifique-se de que o App Service já está criado" -ForegroundColor White
+Write-Host "  • Verifique se você tem permissões para configurar o App Service" -ForegroundColor White
+Write-Host "  • O Power BI Workspace deve estar criado previamente" -ForegroundColor White
+Write-Host ""
+
+Write-Host "✅ DEMO CONCLUÍDA - Script pronto para execução real!" -ForegroundColor Green

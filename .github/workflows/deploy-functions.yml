@@ -1,0 +1,60 @@
+name: Deploy Functions to Azure
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'src/AzureSmartCost.Functions/**'
+      - 'src/AzureSmartCost.Shared/**'
+      - '.github/workflows/deploy-functions.yml'
+  workflow_dispatch:
+
+env:
+  AZURE_FUNCTIONAPP_NAME: 'smartcost-func-prod'   # Set this to your function app name
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './src/AzureSmartCost.Functions'
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: 🔍 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: 📦 Restore dependencies
+      run: |
+        dotnet restore ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        dotnet restore ./src/AzureSmartCost.Shared
+
+    - name: 🏗️ Build application
+      run: |
+        dotnet build ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }} --configuration Release --no-restore
+
+    - name: 📦 Publish application
+      run: |
+        dotnet publish ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }} --configuration Release --no-build --output ./function-publish
+
+    - name: 🚀 Deploy to Azure Functions
+      uses: Azure/functions-action@v1
+      with:
+        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+        package: './function-publish'
+        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+    - name: ✅ Deployment notification
+      if: success()
+      run: |
+        echo "🎉 Azure Functions deployment completed successfully!"
+        echo "📋 Function App: ${{ env.AZURE_FUNCTIONAPP_NAME }}"
+
+    - name: ❌ Deployment failed notification
+      if: failure()
+      run: |
+        echo "❌ Azure Functions deployment failed. Please check the logs for details."

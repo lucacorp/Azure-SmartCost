@@ -1,0 +1,9 @@
+This is a placeholder for: Mobile Screenshot (750x1334)
+
+To replace with real screenshot:
+1. Run the app: npm start
+2. Open in Chrome DevTools
+3. Select device: iPhone 8 Plus (750x1334)
+4. Navigate to dashboard
+5. Take screenshot
+6. Save as: screenshots/mobile.png

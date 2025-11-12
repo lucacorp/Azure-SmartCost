@@ -1,0 +1,83 @@
+name: Deploy Frontend to Static Web Apps
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'smartcost-dashboard/**'
+      - '.github/workflows/deploy-frontend.yml'
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, closed]
+    paths: 
+      - 'smartcost-dashboard/**'
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy_job:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    environment: production
+    
+    steps:
+    - name: 🔍 Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+        
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './smartcost-dashboard/package-lock.json'
+
+    - name: 📥 Install dependencies
+      run: |
+        cd ./smartcost-dashboard
+        npm ci
+
+    - name: 🧪 Run tests
+      run: |
+        cd ./smartcost-dashboard
+        npm run test -- --coverage --watchAll=false
+
+    - name: 🏗️ Build application
+      run: |
+        cd ./smartcost-dashboard
+        npm run build
+      env:
+        CI: false
+        REACT_APP_API_BASE_URL: https://smartcost-api-prod.azurewebsites.net/api
+        REACT_APP_ENVIRONMENT: production
+
+    - name: 🚀 Build And Deploy to Static Web Apps
+      id: builddeploy
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_SMARTCOST }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        action: "upload"
+        app_location: "./smartcost-dashboard"
+        api_location: ""
+        output_location: "build"
+        skip_app_build: true
+
+    - name: ✅ Deployment notification
+      if: success()
+      run: |
+        echo "🎉 Frontend deployment to Azure Static Web Apps completed successfully!"
+        echo "🔗 Application URL: ${{ steps.builddeploy.outputs.static_web_app_url }}"
+
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+    - name: 🧹 Close Pull Request
+      id: closepullrequest
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_SMARTCOST }}
+        action: "close"

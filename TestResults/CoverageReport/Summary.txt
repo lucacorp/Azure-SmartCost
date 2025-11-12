@@ -1,0 +1,151 @@
+Summary
+  Generated on: 11/12/2025 - 1:21:13 PM
+  Coverage date: 11/12/2025 - 11:58:27 AM - 11/12/2025 - 12:18:27 PM
+  Parser: MultiReport (3x Cobertura)
+  Assemblies: 2
+  Classes: 127
+  Files: 40
+  Line coverage: 9.1%
+  Covered lines: 527
+  Uncovered lines: 5241
+  Coverable lines: 5768
+  Total lines: 9920
+  Branch coverage: 5.8% (52 of 884)
+  Covered branches: 52
+  Total branches: 884
+  Method coverage: 18% (172 of 952)
+  Full method coverage: 17.4% (166 of 952)
+  Covered methods: 172
+  Fully covered methods: 166
+  Total methods: 952
+
+AzureSmartCost.Api                                                           8.6%
+  AzureSmartCost.Api.Controllers.AlertsController                              0%
+  AzureSmartCost.Api.Controllers.AnalyticsController                           0%
+  AzureSmartCost.Api.Controllers.AnalyticsDashboard                            0%
+  AzureSmartCost.Api.Controllers.AuthController                                0%
+  AzureSmartCost.Api.Controllers.BillingController                             0%
+  AzureSmartCost.Api.Controllers.CheckoutRequest                               0%
+  AzureSmartCost.Api.Controllers.CostsController                               0%
+  AzureSmartCost.Api.Controllers.DashboardController                           0%
+  AzureSmartCost.Api.Controllers.DowngradeRequest                              0%
+  AzureSmartCost.Api.Controllers.HealthController                              0%
+  AzureSmartCost.Api.Controllers.KqlQueryRequest                               0%
+  AzureSmartCost.Api.Controllers.MonitoringController                          0%
+  AzureSmartCost.Api.Controllers.PowerBiController                          55.1%
+  AzureSmartCost.Api.Controllers.TelemetryEventRequest                         0%
+  AzureSmartCost.Api.Controllers.TenantsController                             0%
+  AzureSmartCost.Api.Controllers.UpgradeRequest                                0%
+  AzureSmartCost.Api.Middleware.TenantMiddleware                               0%
+  AzureSmartCost.Api.Middleware.TenantMiddlewareExtensions                     0%
+  Program                                                                      0%
+
+AzureSmartCost.Shared                                                        9.4%
+  AzureSmartCost.Shared.Interfaces.TenantContext                               0%
+  AzureSmartCost.Shared.Models.Analytics.AnomalyAlert                          0%
+  AzureSmartCost.Shared.Models.Analytics.CostOptimizationRecommendation        0%
+  AzureSmartCost.Shared.Models.Analytics.CostPrediction                        0%
+  AzureSmartCost.Shared.Models.Analytics.HistoricalCostPoint                   0%
+  AzureSmartCost.Shared.Models.Analytics.SeasonalPattern                       0%
+  AzureSmartCost.Shared.Models.Analytics.TrendAnalysis                         0%
+  AzureSmartCost.Shared.Models.ApiResponse<T>                                 20%
+  AzureSmartCost.Shared.Models.AuditLog                                        0%
+  AzureSmartCost.Shared.Models.Budget.AllocationCriteria                       0%
+  AzureSmartCost.Shared.Models.Budget.AllocationRule                           0%
+  AzureSmartCost.Shared.Models.Budget.ApprovalStep                             0%
+  AzureSmartCost.Shared.Models.Budget.Budget                                   0%
+  AzureSmartCost.Shared.Models.Budget.BudgetScope                              0%
+  AzureSmartCost.Shared.Models.Budget.BudgetThreshold                          0%
+  AzureSmartCost.Shared.Models.Budget.BudgetUtilization                        0%
+  AzureSmartCost.Shared.Models.Budget.CostAllocation                           0%
+  AzureSmartCost.Shared.Models.Budget.CostCenter                               0%
+  AzureSmartCost.Shared.Models.Budget.Department                               0%
+  AzureSmartCost.Shared.Models.Budget.ExpenseApproval                          0%
+  AzureSmartCost.Shared.Models.Budget.NotificationAction                       0%
+  AzureSmartCost.Shared.Models.Budget.SpendingByCategory                       0%
+  AzureSmartCost.Shared.Models.Budget.TrendProjection                          0%
+  AzureSmartCost.Shared.Models.CosmosDbSettings                                0%
+  AzureSmartCost.Shared.Models.CostAlert                                       0%
+  AzureSmartCost.Shared.Models.CostRecord                                   96.1%
+  AzureSmartCost.Shared.Models.CostThreshold                                   0%
+  AzureSmartCost.Shared.Models.JwtClaims                                       0%
+  AzureSmartCost.Shared.Models.LoginRequest                                    0%
+  AzureSmartCost.Shared.Models.LoginResponse                                   0%
+  AzureSmartCost.Shared.Models.Monitoring.AlertCondition                       0%
+  AzureSmartCost.Shared.Models.Monitoring.AlertSummary                         0%
+  AzureSmartCost.Shared.Models.Monitoring.ApplicationInsightsConfig            0%
+  AzureSmartCost.Shared.Models.Monitoring.CustomMetric                         0%
+  AzureSmartCost.Shared.Models.Monitoring.DataPoint                            0%
+  AzureSmartCost.Shared.Models.Monitoring.HealthComponent                      0%
+  AzureSmartCost.Shared.Models.Monitoring.KqlQuery                             0%
+  AzureSmartCost.Shared.Models.Monitoring.MetricSummary                        0%
+  AzureSmartCost.Shared.Models.Monitoring.MonitoringAlert                      0%
+  AzureSmartCost.Shared.Models.Monitoring.PerformanceDashboard                 0%
+  AzureSmartCost.Shared.Models.Monitoring.RecommendedAction                    0%
+  AzureSmartCost.Shared.Models.Monitoring.SystemHealth                         0%
+  AzureSmartCost.Shared.Models.MultiCloud.CloudOptimizationRecommendation      0%
+  AzureSmartCost.Shared.Models.MultiCloud.CloudSpecificData                    0%
+  AzureSmartCost.Shared.Models.MultiCloud.CrossCloudComparison                 0%
+  AzureSmartCost.Shared.Models.MultiCloud.MultiCloudAccount                    0%
+  AzureSmartCost.Shared.Models.MultiCloud.MultiCloudDashboard                  0%
+  AzureSmartCost.Shared.Models.MultiCloud.UnifiedCostRecord                    0%
+  AzureSmartCost.Shared.Models.PowerBiAnalytics                                0%
+  AzureSmartCost.Shared.Models.PowerBiBookmark                                 0%
+  AzureSmartCost.Shared.Models.PowerBiColumn                                   0%
+  AzureSmartCost.Shared.Models.PowerBiConnectionDetails                        0%
+  AzureSmartCost.Shared.Models.PowerBiCostData                               100%
+  AzureSmartCost.Shared.Models.PowerBiCostRecord                             100%
+  AzureSmartCost.Shared.Models.PowerBiCustomLayout                             0%
+  AzureSmartCost.Shared.Models.PowerBiDataset                                  0%
+  AzureSmartCost.Shared.Models.PowerBiDatasource                               0%
+  AzureSmartCost.Shared.Models.PowerBiDateDimension                          100%
+  AzureSmartCost.Shared.Models.PowerBiDateRange                              100%
+  AzureSmartCost.Shared.Models.PowerBiDisplayState                             0%
+  AzureSmartCost.Shared.Models.PowerBiEmbedConfig                            100%
+  AzureSmartCost.Shared.Models.PowerBiEmbedSettings                           75%
+  AzureSmartCost.Shared.Models.PowerBiExportConfiguration                      0%
+  AzureSmartCost.Shared.Models.PowerBiExportFilter                             0%
+  AzureSmartCost.Shared.Models.PowerBiExportPageSettings                       0%
+  AzureSmartCost.Shared.Models.PowerBiExportRequest                            0%
+  AzureSmartCost.Shared.Models.PowerBiImportRequest                            0%
+  AzureSmartCost.Shared.Models.PowerBiMeasure                                  0%
+  AzureSmartCost.Shared.Models.PowerBiPageAnalytics                            0%
+  AzureSmartCost.Shared.Models.PowerBiPageLayout                               0%
+  AzureSmartCost.Shared.Models.PowerBiPageNavigation                         100%
+  AzureSmartCost.Shared.Models.PowerBiPane                                   100%
+  AzureSmartCost.Shared.Models.PowerBiRefreshObject                            0%
+  AzureSmartCost.Shared.Models.PowerBiRefreshRequest                           0%
+  AzureSmartCost.Shared.Models.PowerBiRelationship                             0%
+  AzureSmartCost.Shared.Models.PowerBiReport                                88.8%
+  AzureSmartCost.Shared.Models.PowerBiReportUser                               0%
+  AzureSmartCost.Shared.Models.PowerBiServiceBreakdown                       100%
+  AzureSmartCost.Shared.Models.PowerBiTable                                    0%
+  AzureSmartCost.Shared.Models.PowerBiTrendPoint                               0%
+  AzureSmartCost.Shared.Models.PowerBiTrendsData                               0%
+  AzureSmartCost.Shared.Models.PowerBiTrendsSummary                            0%
+  AzureSmartCost.Shared.Models.PowerBiViewTrend                                0%
+  AzureSmartCost.Shared.Models.PowerBiVisualLayout                             0%
+  AzureSmartCost.Shared.Models.PowerBiWorkspace                                0%
+  AzureSmartCost.Shared.Models.RolePermissions                                 0%
+  AzureSmartCost.Shared.Models.SmartCostPowerBiReports                       100%
+  AzureSmartCost.Shared.Models.SmartCostPowerBiTemplates                       0%
+  AzureSmartCost.Shared.Models.StripeInvoice                                   0%
+  AzureSmartCost.Shared.Models.StripeWebhookEvent                              0%
+  AzureSmartCost.Shared.Models.SubscriptionPlan                              100%
+  AzureSmartCost.Shared.Models.Tenant                                        100%
+  AzureSmartCost.Shared.Models.TenantUser                                      0%
+  AzureSmartCost.Shared.Models.UserInfo                                        0%
+  AzureSmartCost.Shared.Services.AlertService                                  0%
+  AzureSmartCost.Shared.Services.AuthenticationService                         0%
+  AzureSmartCost.Shared.Services.CosmosDbService                               0%
+  AzureSmartCost.Shared.Services.CostManagementService                         0%
+  AzureSmartCost.Shared.Services.CostManagementServiceReal                     0%
+  AzureSmartCost.Shared.Services.Implementation.BudgetManagementService        0%
+  AzureSmartCost.Shared.Services.Implementation.CostAnalyticsService           0%
+  AzureSmartCost.Shared.Services.Implementation.KeyVaultService               28%
+  AzureSmartCost.Shared.Services.Implementation.MonitoringService              0%
+  AzureSmartCost.Shared.Services.Implementation.StripeService               30.2%
+  AzureSmartCost.Shared.Services.Implementation.TenantService                2.9%
+  AzureSmartCost.Shared.Services.MockPowerBiService                            0%
+  AzureSmartCost.Shared.Services.ModelPerformanceMetrics                       0%
+  AzureSmartCost.Shared.Services.PowerBiService                                0%

@@ -1,0 +1,212 @@
+{
+  "$schema": "https://product-ingestion.azureedge.net/schema/configure/2022-03-01-preview5",
+  "resources": [
+    {
+      "$schema": "https://product-ingestion.azureedge.net/schema/saas-offer/2022-03-01-preview5",
+      "identity": {
+        "externalId": "azure-smartcost"
+      },
+      "alias": "Azure SmartCost - Otimização Inteligente de Custos",
+      "offerType": "SaaS",
+      "publisher": "YourPublisherName",
+      "preview": {
+        "enabled": false,
+        "subscriptions": []
+      },
+      "customerLeads": {
+        "enabled": true,
+        "destination": "AzureTable"
+      },
+      "testDrive": {
+        "enabled": false
+      },
+      "plans": [
+        {
+          "identity": {
+            "externalId": "free"
+          },
+          "alias": "Free Plan",
+          "description": "Plano gratuito com funcionalidades básicas de monitoramento de custos Azure",
+          "azureRegions": ["public"],
+          "pricingAndAvailability": {
+            "markets": ["BR", "US", "PT", "ES", "MX", "AR"],
+            "visibility": "Public",
+            "pricing": {
+              "model": "Flat",
+              "recurringPrice": {
+                "price": 0,
+                "currencyCode": "USD",
+                "term": "P1M"
+              }
+            }
+          },
+          "technicalConfiguration": {
+            "landingPageUrl": "https://smartcost-api.azurewebsites.net/api/marketplace/landing",
+            "connectionWebhook": "https://smartcost-api.azurewebsites.net/api/marketplace/webhook",
+            "allowedTenantIds": []
+          },
+          "features": [
+            "Dashboard básico de custos Azure",
+            "Visualização de recursos ativos",
+            "Relatórios mensais",
+            "Suporte comunitário",
+            "Até 5 assinaturas Azure"
+          ]
+        },
+        {
+          "identity": {
+            "externalId": "pro"
+          },
+          "alias": "Pro Plan",
+          "description": "Plano profissional com análises avançadas, alertas personalizados e Power BI",
+          "azureRegions": ["public"],
+          "pricingAndAvailability": {
+            "markets": ["BR", "US", "PT", "ES", "MX", "AR"],
+            "visibility": "Public",
+            "pricing": {
+              "model": "Flat",
+              "recurringPrice": {
+                "price": 99,
+                "currencyCode": "USD",
+                "term": "P1M"
+              }
+            },
+            "freeTrial": {
+              "enabled": true,
+              "duration": "P14D"
+            }
+          },
+          "technicalConfiguration": {
+            "landingPageUrl": "https://smartcost-api.azurewebsites.net/api/marketplace/landing",
+            "connectionWebhook": "https://smartcost-api.azurewebsites.net/api/marketplace/webhook",
+            "allowedTenantIds": []
+          },
+          "features": [
+            "Todas as funcionalidades do plano Free",
+            "Análise preditiva de custos com IA",
+            "Alertas personalizados por email e webhook",
+            "Integração com Power BI",
+            "Recomendações de otimização automáticas",
+            "Histórico de 12 meses",
+            "Suporte prioritário",
+            "Até 50 assinaturas Azure"
+          ]
+        },
+        {
+          "identity": {
+            "externalId": "enterprise"
+          },
+          "alias": "Enterprise Plan",
+          "description": "Solução enterprise com SSO, API dedicada, multi-tenancy e suporte 24/7",
+          "azureRegions": ["public"],
+          "pricingAndAvailability": {
+            "markets": ["BR", "US", "PT", "ES", "MX", "AR"],
+            "visibility": "Public",
+            "pricing": {
+              "model": "Flat",
+              "recurringPrice": {
+                "price": 499,
+                "currencyCode": "USD",
+                "term": "P1M"
+              }
+            },
+            "freeTrial": {
+              "enabled": true,
+              "duration": "P30D"
+            }
+          },
+          "technicalConfiguration": {
+            "landingPageUrl": "https://smartcost-api.azurewebsites.net/api/marketplace/landing",
+            "connectionWebhook": "https://smartcost-api.azurewebsites.net/api/marketplace/webhook",
+            "allowedTenantIds": []
+          },
+          "features": [
+            "Todas as funcionalidades do plano Pro",
+            "SSO empresarial (Azure AD/SAML)",
+            "API dedicada com rate limits elevados",
+            "Multi-tenancy com isolamento de dados",
+            "Dashboards personalizáveis",
+            "Exportação de dados em tempo real",
+            "Histórico ilimitado",
+            "SLA 99.9%",
+            "Suporte 24/7 via telefone e email",
+            "Assinaturas Azure ilimitadas",
+            "Gerente de conta dedicado"
+          ]
+        }
+      ],
+      "listing": {
+        "summary": "Plataforma SaaS para otimização inteligente de custos Azure com IA, alertas e Power BI",
+        "shortDescription": "Reduza custos Azure em até 40% com análise preditiva, alertas inteligentes e recomendações automáticas de otimização.",
+        "description": "# Azure SmartCost - Otimização Inteligente de Custos Azure\n\n## Visão Geral\nAzure SmartCost é uma plataforma SaaS enterprise que oferece análise preditiva e otimização automática de custos para ambientes Microsoft Azure. Com inteligência artificial e integração nativa com Power BI, ajudamos empresas a reduzir custos em até 40% sem comprometer desempenho.\n\n## Principais Funcionalidades\n\n### 📊 Dashboard Unificado\n- Visualização em tempo real de todos os custos Azure\n- Análise por assinatura, grupo de recursos e tags\n- Gráficos interativos com drill-down\n- Exportação para Excel, PDF e Power BI\n\n### 🤖 Análise Preditiva com IA\n- Previsão de custos futuros com machine learning\n- Detecção automática de anomalias e spikes\n- Identificação de tendências de consumo\n- Recomendações personalizadas de economia\n\n### 🔔 Alertas Inteligentes\n- Notificações por email, SMS e webhook\n- Alertas de orçamento excedido\n- Detecção de recursos ociosos ou subutilizados\n- Configuração de thresholds customizados\n\n### 💡 Recomendações Automáticas\n- Sugestões de rightsizing de VMs\n- Identificação de Reserved Instances e Savings Plans\n- Análise de recursos órfãos e não utilizados\n- Otimização de storage tiers e backups\n\n### 📈 Integração com Power BI\n- Templates prontos para uso\n- Refresh automático de dados\n- Dashboards corporativos customizáveis\n- Compartilhamento seguro via workspace\n\n### 🔒 Segurança Enterprise\n- Autenticação via Azure AD (SSO)\n- RBAC granular por tenant\n- Auditoria completa de ações\n- Criptografia end-to-end\n- Certificação ISO 27001 e SOC 2\n\n## Casos de Uso\n\n### Gestão Financeira de TI\nCFOs e controllers financeiros obtêm visibilidade completa dos gastos cloud, com previsões precisas e alertas proativos de desvios orçamentários.\n\n### FinOps e Cloud Governance\nEquipes de FinOps implementam políticas de governança, monitoram compliance e promovem cultura de accountability de custos.\n\n### Otimização Contínua\nEngenheiros de cloud recebem recomendações técnicas actionable para reduzir custos sem impactar performance ou disponibilidade.\n\n## Integrações\n- Microsoft Azure (Cost Management API, Resource Graph)\n- Microsoft Entra ID (Azure AD)\n- Power BI (REST API e Embedding)\n- Microsoft Teams (notificações)\n- ServiceNow, JIRA (tickets automáticos)\n- Slack, Webhook (alertas customizados)\n\n## Requisitos\n- Assinatura Microsoft Azure ativa\n- Permissões de leitura em Cost Management\n- Azure AD para autenticação (planos Pro e Enterprise)\n\n## Suporte\n- **Free**: Documentação e comunidade\n- **Pro**: Email support (resposta em 24h)\n- **Enterprise**: Suporte 24/7 via telefone, email e chat\n\n## Começando\n1. Adquira o plano desejado no Azure Marketplace\n2. Clique em 'Configure Account' após a compra\n3. Autentique com sua conta Azure AD\n4. Conecte suas assinaturas Azure\n5. Comece a economizar imediatamente!\n\n## Privacidade e Compliance\nAzure SmartCost processa apenas metadados de custos e recursos. Não acessamos dados de aplicações, VMs ou databases. Conformidade total com LGPD, GDPR e SOC 2 Type II.",
+        "searchKeywords": [
+          "azure cost management",
+          "cloud cost optimization",
+          "finops",
+          "azure billing",
+          "cost analytics",
+          "power bi azure costs"
+        ],
+        "privacyPolicyUrl": "https://smartcost.io/privacy",
+        "supportUrl": "https://support.smartcost.io",
+        "termsOfUseUrl": "https://smartcost.io/terms",
+        "engineeringContactEmail": "engineering@smartcost.io",
+        "supportContactEmail": "support@smartcost.io",
+        "helpUrl": "https://docs.smartcost.io",
+        "categories": [
+          "DevOps",
+          "IT & Management Tools",
+          "Analytics",
+          "Finance"
+        ],
+        "industries": [
+          "Financial Services",
+          "Healthcare",
+          "Retail",
+          "Manufacturing",
+          "Technology"
+        ],
+        "screenshots": [
+          {
+            "caption": "Dashboard principal com visão consolidada de custos Azure",
+            "imageType": "Screenshot",
+            "fileName": "dashboard-main.png"
+          },
+          {
+            "caption": "Análise preditiva com forecasting de custos futuros",
+            "imageType": "Screenshot",
+            "fileName": "predictive-analytics.png"
+          },
+          {
+            "caption": "Alertas inteligentes e notificações configuráveis",
+            "imageType": "Screenshot",
+            "fileName": "smart-alerts.png"
+          },
+          {
+            "caption": "Recomendações automáticas de otimização de custos",
+            "imageType": "Screenshot",
+            "fileName": "recommendations.png"
+          },
+          {
+            "caption": "Integração nativa com Power BI e dashboards customizáveis",
+            "imageType": "Screenshot",
+            "fileName": "powerbi-integration.png"
+          }
+        ],
+        "videos": [
+          {
+            "caption": "Azure SmartCost - Demo em 3 minutos",
+            "videoUrl": "https://www.youtube.com/watch?v=PLACEHOLDER"
+          }
+        ],
+        "logos": {
+          "small": "logo-48x48.png",
+          "medium": "logo-216x216.png",
+          "large": "logo-815x415.png",
+          "wide": "logo-255x115.png",
+          "hero": "logo-815x415.png"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "East US"
+    },
+    "environmentName": {
+      "value": "dev"
+    },
+    "projectName": {
+      "value": "smartcost"
+    },
+    "appServiceSku": {
+      "value": "B1"
+    },
+    "jwtSecret": {
+      "value": "SmartCost-Development-Secret-Key-2024-ChangeInProduction"
+    },
+    "azureAdClientId": {
+      "value": "your-azure-ad-client-id-here"
+    },
+    "azureAdClientSecret": {
+      "value": "your-azure-ad-client-secret-here"
+    }
+  }
+}

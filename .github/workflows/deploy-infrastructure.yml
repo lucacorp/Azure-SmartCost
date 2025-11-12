@@ -1,0 +1,117 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'infra/**'
+      - '.github/workflows/deploy-infrastructure.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - prod
+
+env:
+  AZURE_RESOURCE_GROUP_DEV: 'rg-smartcost-dev'
+  AZURE_RESOURCE_GROUP_PROD: 'rg-smartcost-prod'
+  AZURE_LOCATION: 'eastus'
+
+jobs:
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    
+    steps:
+    - name: 🔍 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🔑 Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: 🔧 Set environment variables
+      run: |
+        if [ "${{ github.event.inputs.environment }}" == "prod" ]; then
+          echo "RESOURCE_GROUP=${{ env.AZURE_RESOURCE_GROUP_PROD }}" >> $GITHUB_ENV
+          echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+          echo "PARAMETERS_FILE=./infra/parameters.prod.json" >> $GITHUB_ENV
+        else
+          echo "RESOURCE_GROUP=${{ env.AZURE_RESOURCE_GROUP_DEV }}" >> $GITHUB_ENV
+          echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+          echo "PARAMETERS_FILE=./infra/parameters.dev.json" >> $GITHUB_ENV
+        fi
+
+    - name: 📦 Create Resource Group
+      run: |
+        az group create \
+          --name ${{ env.RESOURCE_GROUP }} \
+          --location ${{ env.AZURE_LOCATION }}
+
+    - name: 🏗️ Deploy Bicep template
+      id: deploy
+      run: |
+        DEPLOYMENT_NAME="smartcost-infra-$(date +%Y%m%d-%H%M%S)"
+        
+        az deployment group create \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --template-file ./infra/main.bicep \
+          --parameters @${{ env.PARAMETERS_FILE }} \
+          --parameters jwtSecret="${{ secrets.JWT_SECRET }}" \
+          --parameters azureAdClientId="${{ secrets.AZURE_AD_CLIENT_ID }}" \
+          --parameters azureAdClientSecret="${{ secrets.AZURE_AD_CLIENT_SECRET }}" \
+          --name $DEPLOYMENT_NAME \
+          --output json > deployment-output.json
+          
+        echo "deployment-name=$DEPLOYMENT_NAME" >> $GITHUB_OUTPUT
+
+    - name: 📋 Get deployment outputs
+      id: outputs
+      run: |
+        API_APP_NAME=$(jq -r '.properties.outputs.apiAppName.value' deployment-output.json)
+        API_APP_URL=$(jq -r '.properties.outputs.apiAppUrl.value' deployment-output.json)
+        STATIC_WEB_APP_NAME=$(jq -r '.properties.outputs.staticWebAppName.value' deployment-output.json)
+        FUNCTION_APP_NAME=$(jq -r '.properties.outputs.functionAppName.value' deployment-output.json)
+        
+        echo "api-app-name=$API_APP_NAME" >> $GITHUB_OUTPUT
+        echo "api-app-url=$API_APP_URL" >> $GITHUB_OUTPUT
+        echo "static-web-app-name=$STATIC_WEB_APP_NAME" >> $GITHUB_OUTPUT
+        echo "function-app-name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
+
+    - name: 🔗 Get Static Web App deployment token
+      id: swa-token
+      run: |
+        SWA_TOKEN=$(az staticwebapp secrets list \
+          --name ${{ steps.outputs.outputs.static-web-app-name }} \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --query 'properties.apiKey' -o tsv)
+        echo "::add-mask::$SWA_TOKEN"
+        echo "token=$SWA_TOKEN" >> $GITHUB_OUTPUT
+
+    - name: ✅ Infrastructure deployment completed
+      run: |
+        echo "🎉 Infrastructure deployment completed successfully!"
+        echo "📋 Deployment Summary:"
+        echo "   • Environment: ${{ env.ENVIRONMENT }}"
+        echo "   • Resource Group: ${{ env.RESOURCE_GROUP }}"
+        echo "   • API App: ${{ steps.outputs.outputs.api-app-name }}"
+        echo "   • API URL: ${{ steps.outputs.outputs.api-app-url }}"
+        echo "   • Static Web App: ${{ steps.outputs.outputs.static-web-app-name }}"
+        echo "   • Function App: ${{ steps.outputs.outputs.function-app-name }}"
+        echo ""
+        echo "🔧 Next steps:"
+        echo "   1. Update GitHub secrets with the Static Web App deployment token"
+        echo "   2. Configure App Service publish profiles"
+        echo "   3. Update application settings as needed"
+
+    - name: 📊 Upload deployment summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-summary-${{ env.ENVIRONMENT }}
+        path: deployment-output.json

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus"
+    },
+    "functionAppName": {
+      "value": "smartcost-func-dev"
+    },
+    "storageAccountName": {
+      "value": "smartcoststorage001"
+    },
+    "cosmosAccountName": {
+      "value": "smartcost-cosmos-dev"
+    },
+    "keyVaultName": {
+      "value": "smartcost-kv-dev"
+    },
+    "subscriptionId": {
+      "value": "sua-subscription-id-aqui"
+    },
+    "marketplaceClientId": {
+      "value": "your-marketplace-app-client-id"
+    },
+    "marketplaceClientSecret": {
+      "value": "your-marketplace-app-client-secret"
+    },
+    "marketplacePublisherId": {
+      "value": "your-publisher-id"
+    }
+  }
+}

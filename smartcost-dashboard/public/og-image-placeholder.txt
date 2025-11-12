@@ -1,0 +1,13 @@
+OpenGraph Image Placeholder (1200x630)
+
+Quick option - Use Canva:
+1. Go to: https://canva.com
+2. Create custom size: 1200x630
+3. Use template "Social Media Post"
+4. Add text:
+   - "Azure SmartCost"
+   - "Azure Cost Management Made Simple"
+   - "Start Free Trial"
+5. Use colors: #0078d4, #00bcf2
+6. Export as PNG
+7. Save as: og-image.png
