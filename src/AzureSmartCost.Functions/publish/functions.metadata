@@ -1,0 +1,20 @@
+[
+  {
+    "name": "CollectCostData",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.CollectCostData.RunAsync",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "timer",
+        "direction": "In",
+        "type": "timerTrigger",
+        "schedule": "0 0 * * * *",
+        "properties": {}
+      }
+    ]
+  }
+]

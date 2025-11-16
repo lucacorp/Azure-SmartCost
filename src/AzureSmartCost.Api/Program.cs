@@ -51,7 +51,9 @@ builder.Services.AddSwaggerGen(c =>
 var corsOrigins = builder.Configuration.GetSection("CORS:AllowedOrigins").Get<string[]>() ?? new[]
 {
     "http://localhost:3000",
-    "https://localhost:3000"
+    "https://localhost:3000",
+    "https://victorious-ground-003efd50f.3.azurestaticapps.net",
+    "https://victorious-ground-003efd50f-preview.eastus2.3.azurestaticapps.net"
 };
 
 builder.Services.AddCors(options =>

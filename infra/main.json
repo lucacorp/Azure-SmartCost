@@ -1,0 +1,769 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.38.33.27573",
+      "templateHash": "10303667540003780944"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "The location for all resources"
+      }
+    },
+    "environmentName": {
+      "type": "string",
+      "defaultValue": "dev",
+      "metadata": {
+        "description": "Environment name (dev, staging, prod)"
+      }
+    },
+    "projectName": {
+      "type": "string",
+      "defaultValue": "smartcost",
+      "metadata": {
+        "description": "The name prefix for all resources"
+      }
+    },
+    "functionAppName": {
+      "type": "string",
+      "defaultValue": "[format('{0}-func-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "The name of the Function App"
+      }
+    },
+    "apiAppName": {
+      "type": "string",
+      "defaultValue": "[format('{0}-api-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "The name of the API App Service"
+      }
+    },
+    "staticWebAppName": {
+      "type": "string",
+      "defaultValue": "[format('{0}-web-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "The name of the Static Web App"
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[format('{0}stg{1}', parameters('projectName'), uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "The name of the Storage Account"
+      }
+    },
+    "cosmosAccountName": {
+      "type": "string",
+      "defaultValue": "[format('{0}-cosmos-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "The name of the Cosmos DB Account"
+      }
+    },
+    "keyVaultName": {
+      "type": "string",
+      "defaultValue": "[format('{0}-kv-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "The name of the Key Vault"
+      }
+    },
+    "subscriptionId": {
+      "type": "string",
+      "defaultValue": "[subscription().subscriptionId]",
+      "metadata": {
+        "description": "The Azure subscription ID to monitor costs for"
+      }
+    },
+    "appServiceSku": {
+      "type": "string",
+      "defaultValue": "B1",
+      "metadata": {
+        "description": "SKU for App Service Plan"
+      }
+    },
+    "jwtSecret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "JWT Secret for authentication"
+      }
+    },
+    "azureAdClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure AD Client ID"
+      }
+    },
+    "azureAdClientSecret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Azure AD Client Secret"
+      }
+    },
+    "azureAdTenantId": {
+      "type": "string",
+      "defaultValue": "[tenant().tenantId]",
+      "metadata": {
+        "description": "Azure AD Tenant ID"
+      }
+    },
+    "marketplaceTenantId": {
+      "type": "string",
+      "defaultValue": "[tenant().tenantId]",
+      "metadata": {
+        "description": "Azure Marketplace App Registration Tenant ID"
+      }
+    },
+    "marketplaceClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Marketplace App Registration Client ID"
+      }
+    },
+    "marketplaceClientSecret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Azure Marketplace App Registration Client Secret"
+      }
+    },
+    "marketplaceOfferId": {
+      "type": "string",
+      "defaultValue": "azure-smartcost",
+      "metadata": {
+        "description": "Azure Marketplace Offer ID"
+      }
+    },
+    "marketplacePublisherId": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure Marketplace Publisher ID"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[format('{0}-insights', parameters('functionAppName'))]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "IngestionMode": "ApplicationInsights",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', parameters('functionAppName')))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', parameters('functionAppName')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[format('{0}-logs', parameters('functionAppName'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true
+      }
+    },
+    {
+      "type": "Microsoft.Cache/redis",
+      "apiVersion": "2023-08-01",
+      "name": "[format('{0}-redis-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "[if(equals(parameters('environmentName'), 'prod'), 'Standard', 'Basic')]",
+          "family": "[if(equals(parameters('environmentName'), 'prod'), 'C', 'C')]",
+          "capacity": "[if(equals(parameters('environmentName'), 'prod'), 1, 0)]"
+        },
+        "enableNonSslPort": false,
+        "minimumTlsVersion": "1.2",
+        "publicNetworkAccess": "Enabled",
+        "redisConfiguration": {
+          "maxmemory-policy": "allkeys-lru",
+          "maxmemory-reserved": "50"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2023-04-15",
+      "name": "[parameters('cosmosAccountName')]",
+      "location": "[parameters('location')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0
+          }
+        ],
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
+        "capabilities": [
+          {
+            "name": "EnableServerless"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}', parameters('cosmosAccountName'), 'SmartCostDB')]",
+      "properties": {
+        "resource": {
+          "id": "SmartCostDB"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', parameters('cosmosAccountName'), 'SmartCostDB', 'CostRecords')]",
+      "properties": {
+        "resource": {
+          "id": "CostRecords",
+          "partitionKey": {
+            "paths": [
+              "/partitionKey"
+            ],
+            "kind": "Hash"
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('cosmosAccountName'), 'SmartCostDB')]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', parameters('cosmosAccountName'), 'SmartCostDB', 'Events')]",
+      "properties": {
+        "resource": {
+          "id": "Events",
+          "partitionKey": {
+            "paths": [
+              "/partitionKey"
+            ],
+            "kind": "Hash"
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('cosmosAccountName'), 'SmartCostDB')]"
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', parameters('cosmosAccountName'), 'SmartCostDB', 'MarketplaceSubscriptions')]",
+      "properties": {
+        "resource": {
+          "id": "MarketplaceSubscriptions",
+          "partitionKey": {
+            "paths": [
+              "/marketplaceSubscriptionId"
+            ],
+            "kind": "Hash"
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('cosmosAccountName'), 'SmartCostDB')]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2023-07-01",
+      "name": "[parameters('keyVaultName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "standard"
+        },
+        "tenantId": "[tenant().tenantId]",
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 7,
+        "accessPolicies": [],
+        "enableRbacAuthorization": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-09-01",
+      "name": "[format('{0}-plan', parameters('apiAppName'))]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('appServiceSku')]",
+        "capacity": 1
+      },
+      "properties": {
+        "reserved": false
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('apiAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "app",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('{0}-plan', parameters('apiAppName')))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "alwaysOn": true,
+          "http20Enabled": true,
+          "minTlsVersion": "1.2",
+          "netFrameworkVersion": "v8.0",
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', format('{0}-insights', parameters('functionAppName'))), '2020-02-02').InstrumentationKey]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference(resourceId('Microsoft.Insights/components', format('{0}-insights', parameters('functionAppName'))), '2020-02-02').ConnectionString]"
+            },
+            {
+              "name": "ASPNETCORE_ENVIRONMENT",
+              "value": "[if(equals(parameters('environmentName'), 'prod'), 'Production', 'Development')]"
+            },
+            {
+              "name": "Jwt__Secret",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=jwt-secret)', parameters('keyVaultName'))]"
+            },
+            {
+              "name": "Jwt__Issuer",
+              "value": "AzureSmartCost"
+            },
+            {
+              "name": "Jwt__Audience",
+              "value": "AzureSmartCost-API"
+            },
+            {
+              "name": "Jwt__ExpiryMinutes",
+              "value": "60"
+            },
+            {
+              "name": "AzureAd__TenantId",
+              "value": "[parameters('azureAdTenantId')]"
+            },
+            {
+              "name": "AzureAd__ClientId",
+              "value": "[parameters('azureAdClientId')]"
+            },
+            {
+              "name": "AzureAd__ClientSecret",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=azure-ad-client-secret)', parameters('keyVaultName'))]"
+            },
+            {
+              "name": "Stripe__ApiKey",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=stripe-api-key)', parameters('keyVaultName'))]"
+            },
+            {
+              "name": "Stripe__PublishableKey",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=stripe-publishable-key)', parameters('keyVaultName'))]"
+            },
+            {
+              "name": "Stripe__WebhookSecret",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=stripe-webhook-secret)', parameters('keyVaultName'))]"
+            },
+            {
+              "name": "Marketplace__TenantId",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=marketplace-tenant-id)', parameters('keyVaultName'))]"
+            },
+            {
+              "name": "Marketplace__ClientId",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=marketplace-client-id)', parameters('keyVaultName'))]"
+            },
+            {
+              "name": "Marketplace__ClientSecret",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=marketplace-client-secret)', parameters('keyVaultName'))]"
+            },
+            {
+              "name": "Marketplace__OfferId",
+              "value": "[parameters('marketplaceOfferId')]"
+            },
+            {
+              "name": "Marketplace__PublisherId",
+              "value": "[parameters('marketplacePublisherId')]"
+            },
+            {
+              "name": "Marketplace__LandingPageUrl",
+              "value": "[format('https://{0}.azurewebsites.net/api/marketplace/landing', parameters('apiAppName'))]"
+            },
+            {
+              "name": "Marketplace__WebhookUrl",
+              "value": "[format('https://{0}.azurewebsites.net/api/marketplace/webhook', parameters('apiAppName'))]"
+            },
+            {
+              "name": "KeyVault__VaultUrl",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri]"
+            },
+            {
+              "name": "KeyVault__UseKeyVault",
+              "value": "true"
+            },
+            {
+              "name": "Redis__Enabled",
+              "value": "true"
+            },
+            {
+              "name": "Redis__InstanceName",
+              "value": "SmartCost:"
+            },
+            {
+              "name": "Redis__DefaultExpirationMinutes",
+              "value": "60"
+            },
+            {
+              "name": "CosmosDb__DatabaseName",
+              "value": "SmartCostDB"
+            },
+            {
+              "name": "CosmosDb__ContainerName",
+              "value": "CostRecords"
+            }
+          ],
+          "connectionStrings": [
+            {
+              "name": "CosmosDb",
+              "connectionString": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=cosmos-connection-string)', parameters('keyVaultName'))]",
+              "type": "Custom"
+            },
+            {
+              "name": "Redis",
+              "connectionString": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=redis-connection-string)', parameters('keyVaultName'))]",
+              "type": "Custom"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', format('{0}-plan', parameters('apiAppName')))]",
+        "[resourceId('Microsoft.Insights/components', format('{0}-insights', parameters('functionAppName')))]",
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('staticWebAppName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Standard"
+      },
+      "properties": {
+        "repositoryUrl": "",
+        "branch": "main",
+        "buildProperties": {
+          "appLocation": "/smartcost-dashboard",
+          "apiLocation": "",
+          "outputLocation": "build"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-09-01",
+      "name": "[format('{0}-plan', parameters('functionAppName'))]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Y1",
+        "tier": "Dynamic"
+      },
+      "properties": {
+        "reserved": false
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('functionAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('{0}-plan', parameters('functionAppName')))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', format('{0}-insights', parameters('functionAppName'))), '2020-02-02').InstrumentationKey]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference(resourceId('Microsoft.Insights/components', format('{0}-insights', parameters('functionAppName'))), '2020-02-02').ConnectionString]"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', parameters('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2022-09-01').keys[0].value)]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~4"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "dotnet-isolated"
+            },
+            {
+              "name": "AZURE_SUBSCRIPTION_ID",
+              "value": "[parameters('subscriptionId')]"
+            },
+            {
+              "name": "CosmosDb__DatabaseName",
+              "value": "SmartCostDB"
+            },
+            {
+              "name": "CosmosDb__CostRecordsContainer",
+              "value": "CostRecords"
+            },
+            {
+              "name": "CosmosDb__EventsContainer",
+              "value": "Events"
+            }
+          ],
+          "connectionStrings": [
+            {
+              "name": "CosmosDb",
+              "connectionString": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')), '2023-04-15').connectionStrings[0].connectionString]",
+              "type": "Custom"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', format('{0}-insights', parameters('functionAppName')))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName'))]",
+        "[resourceId('Microsoft.Web/serverfarms', format('{0}-plan', parameters('functionAppName')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.KeyVault/vaults/{0}', parameters('keyVaultName'))]",
+      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), resourceId('Microsoft.Web/sites', parameters('apiAppName')), 'Key Vault Secrets User')]",
+      "properties": {
+        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('apiAppName')), '2022-09-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('apiAppName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.DocumentDB/databaseAccounts/{0}', parameters('cosmosAccountName'))]",
+      "name": "[guid(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')), resourceId('Microsoft.Web/sites', parameters('apiAppName')), 'Cosmos DB Built-in Data Contributor')]",
+      "properties": {
+        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('apiAppName')), '2022-09-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('apiAppName'))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.DocumentDB/databaseAccounts/{0}', parameters('cosmosAccountName'))]",
+      "name": "[guid(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')), resourceId('Microsoft.Web/sites', parameters('functionAppName')), 'Cosmos DB Built-in Data Contributor')]",
+      "properties": {
+        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2022-09-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName'))]",
+        "[resourceId('Microsoft.Web/sites', parameters('functionAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'jwt-secret')]",
+      "properties": {
+        "value": "[parameters('jwtSecret')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'azure-ad-client-secret')]",
+      "properties": {
+        "value": "[parameters('azureAdClientSecret')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'storage-connection-string')]",
+      "properties": {
+        "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', parameters('storageAccountName'), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2022-09-01').keys[0].value)]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'cosmos-connection-string')]",
+      "properties": {
+        "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')), '2023-04-15').connectionStrings[0].connectionString]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'redis-connection-string')]",
+      "properties": {
+        "value": "[format('{0}:{1},password={2},ssl=True,abortConnect=False', reference(resourceId('Microsoft.Cache/redis', format('{0}-redis-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))), '2023-08-01').hostName, reference(resourceId('Microsoft.Cache/redis', format('{0}-redis-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))), '2023-08-01').sslPort, listKeys(resourceId('Microsoft.Cache/redis', format('{0}-redis-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))), '2023-08-01').primaryKey)]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+        "[resourceId('Microsoft.Cache/redis', format('{0}-redis-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id)))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'marketplace-tenant-id')]",
+      "properties": {
+        "value": "[parameters('marketplaceTenantId')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'marketplace-client-id')]",
+      "properties": {
+        "value": "[parameters('marketplaceClientId')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'marketplace-client-secret')]",
+      "properties": {
+        "value": "[parameters('marketplaceClientSecret')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[resourceGroup().name]"
+    },
+    "functionAppName": {
+      "type": "string",
+      "value": "[parameters('functionAppName')]"
+    },
+    "functionAppPrincipalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2022-09-01', 'full').identity.principalId]"
+    },
+    "apiAppName": {
+      "type": "string",
+      "value": "[parameters('apiAppName')]"
+    },
+    "apiAppUrl": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', parameters('apiAppName')), '2022-09-01').defaultHostName)]"
+    },
+    "apiAppPrincipalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', parameters('apiAppName')), '2022-09-01', 'full').identity.principalId]"
+    },
+    "staticWebAppName": {
+      "type": "string",
+      "value": "[parameters('staticWebAppName')]"
+    },
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName')), '2022-09-01').defaultHostname)]"
+    },
+    "cosmosAccountName": {
+      "type": "string",
+      "value": "[parameters('cosmosAccountName')]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "value": "[parameters('keyVaultName')]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "value": "[parameters('storageAccountName')]"
+    },
+    "appInsightsName": {
+      "type": "string",
+      "value": "[format('{0}-insights', parameters('functionAppName'))]"
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "value": "[format('{0}-logs', parameters('functionAppName'))]"
+    }
+  }
+}

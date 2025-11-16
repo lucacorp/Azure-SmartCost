@@ -2,7 +2,14 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box } from '@mui/material';
+import { MsalProvider, useIsAuthenticated } from '@azure/msal-react';
+import { PublicClientApplication } from '@azure/msal-browser';
+import { msalConfig } from './authConfig';
 import { Dashboard } from './components/Dashboard';
+import { SignInPage } from './components/AuthButton';
+
+// Initialize MSAL
+const msalInstance = new PublicClientApplication(msalConfig);
 
 // Create a client
 const queryClient = new QueryClient({
@@ -78,14 +85,28 @@ const theme = createTheme({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-          <Dashboard />
-        </Box>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <MsalProvider instance={msalInstance}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <MainContent />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </MsalProvider>
+  );
+}
+
+function MainContent() {
+  const isAuthenticated = useIsAuthenticated();
+
+  if (!isAuthenticated) {
+    return <SignInPage />;
+  }
+
+  return (
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
+      <Dashboard />
+    </Box>
   );
 }
 

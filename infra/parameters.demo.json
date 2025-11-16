@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "brazilsouth"
+    },
+    "environmentName": {
+      "value": "demo"
+    },
+    "projectName": {
+      "value": "smartcost"
+    },
+    "appServiceSku": {
+      "value": "F1"
+    },
+    "jwtSecret": {
+      "value": "DEMO-JWT-SECRET-DO-NOT-USE-IN-PRODUCTION-12345"
+    },
+    "azureAdClientId": {
+      "value": "demo-azure-ad-client-id-placeholder"
+    },
+    "azureAdClientSecret": {
+      "value": "demo-azure-ad-client-secret-placeholder"
+    },
+    "marketplaceClientId": {
+      "value": "demo-marketplace-client-id-placeholder"
+    },
+    "marketplaceClientSecret": {
+      "value": "demo-marketplace-client-secret-placeholder"
+    },
+    "marketplacePublisherId": {
+      "value": "demo-publisher-id"
+    }
+  }
+}

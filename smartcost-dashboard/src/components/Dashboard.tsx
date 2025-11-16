@@ -39,6 +39,7 @@ import {
 } from './PowerBiReport';
 import api from '../services/api';
 import { DashboardOverview, TrendData, ChartData, TimeSeriesData } from '../types';
+import { mockApi, mockDashboardMetrics, mockCostData, mockAlerts, mockRecommendations } from '../data/mockData';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -65,7 +66,7 @@ function TabPanel(props: TabPanelProps) {
 export const Dashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
-  const [powerBiEnabled, setPowerBiEnabled] = useState(true);
+  const [powerBiEnabled, setPowerBiEnabled] = useState(false); // Disabled until Power BI is configured
   const queryClient = useQueryClient();
 
   // Fetch dashboard overview
@@ -76,7 +77,11 @@ export const Dashboard: React.FC = () => {
     refetch: refetchOverview,
   } = useQuery({
     queryKey: ['dashboard-overview', selectedPeriod],
-    queryFn: () => api.dashboard.getOverview(selectedPeriod),
+    queryFn: async () => {
+      // TODO: Replace with real API call once backend is ready
+      // return api.dashboard.getOverview(selectedPeriod);
+      return mockApi.getDashboardMetrics();
+    },
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 10000, // Consider fresh for 10 seconds
   });
@@ -88,7 +93,11 @@ export const Dashboard: React.FC = () => {
     error: trendsError,
   } = useQuery({
     queryKey: ['dashboard-trends', selectedPeriod],
-    queryFn: () => api.dashboard.getTrends(selectedPeriod, 'daily'),
+    queryFn: async () => {
+      // TODO: Replace with real API call once backend is ready
+      // return api.dashboard.getTrends(selectedPeriod, 'daily');
+      return mockApi.getCostData();
+    },
     refetchInterval: 30000,
     staleTime: 10000,
   });
@@ -100,7 +109,34 @@ export const Dashboard: React.FC = () => {
     error: alertsError,
   } = useQuery({
     queryKey: ['alert-statistics'],
-    queryFn: () => api.alerts.getAlertStatistics(),
+    queryFn: async () => {
+      // TODO: Replace with real API call once backend is ready
+      // return api.alerts.getAlertStatistics();
+      const alerts = await mockApi.getAlerts();
+      return {
+        total: alerts.length,
+        unread: alerts.filter(a => !a.isRead).length,
+        critical: alerts.filter(a => a.severity === 'warning' || a.severity === 'error').length,
+        data: {
+          thresholdConfiguration: {
+            totalThresholds: 12,
+            activeThresholds: 8,
+          },
+          recentActivity: {
+            last7Days: {
+              totalAlerts: alerts.length,
+              criticalAlerts: alerts.filter(a => a.severity === 'error').length,
+              warningAlerts: alerts.filter(a => a.severity === 'warning').length,
+              infoAlerts: alerts.filter(a => a.severity === 'info').length,
+            },
+          },
+          healthStatus: {
+            status: 'Good',
+            lastEvaluated: new Date().toISOString(),
+          },
+        },
+      };
+    },
     refetchInterval: 60000, // Refresh every minute
     staleTime: 30000,
   });
