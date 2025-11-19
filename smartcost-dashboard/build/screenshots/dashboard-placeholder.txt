@@ -1,0 +1,10 @@
+This is a placeholder for: Dashboard Screenshot (1280x720)
+
+To replace with real screenshot:
+1. Run the app: npm start
+2. Open in Chrome: http://localhost:3000
+3. Login and navigate to dashboard
+4. Press F12 -> Device Toolbar
+5. Set viewport to 1280x720
+6. Take screenshot: Ctrl+Shift+P -> "Capture screenshot"
+7. Save as: screenshots/dashboard.png

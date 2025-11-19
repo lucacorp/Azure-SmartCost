@@ -1,0 +1,11 @@
+Twitter Card Image Placeholder (1200x675)
+
+Quick option - Use Canva:
+1. Go to: https://canva.com
+2. Create custom size: 1200x675
+3. Similar to OG image but with stats:
+   - "+ Saved"
+   - "24/7 Monitoring"
+   - "Free Trial"
+4. Export as PNG
+5. Save as: twitter-image.png

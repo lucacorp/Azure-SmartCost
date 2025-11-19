@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "https://blue-flower-0414b9b0f.3.azurestaticapps.net/static/css/main.e6c13ad2.css",
+    "main.js": "https://blue-flower-0414b9b0f.3.azurestaticapps.net/static/js/main.9989ecea.js",
+    "static/js/453.fb3ec53c.chunk.js": "https://blue-flower-0414b9b0f.3.azurestaticapps.net/static/js/453.fb3ec53c.chunk.js",
+    "index.html": "https://blue-flower-0414b9b0f.3.azurestaticapps.net/index.html",
+    "main.e6c13ad2.css.map": "https://blue-flower-0414b9b0f.3.azurestaticapps.net/static/css/main.e6c13ad2.css.map",
+    "main.9989ecea.js.map": "https://blue-flower-0414b9b0f.3.azurestaticapps.net/static/js/main.9989ecea.js.map",
+    "453.fb3ec53c.chunk.js.map": "https://blue-flower-0414b9b0f.3.azurestaticapps.net/static/js/453.fb3ec53c.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.9989ecea.js"
+  ]
+}

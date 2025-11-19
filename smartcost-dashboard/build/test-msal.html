@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test MSAL Config</title>
+</head>
+<body>
+    <h1>MSAL Configuration Test</h1>
+    <div id="config"></div>
+    <script>
+        const config = {
+            clientId: '5058559e-5972-4470-a627-7ca77fd68ae5',
+            authority: 'https://login.microsoftonline.com/common',
+            redirectUri: 'http://localhost:3000'
+        };
+        
+        document.getElementById('config').innerHTML = `
+            <pre>${JSON.stringify(config, null, 2)}</pre>
+            <p>Client ID válido: ${config.clientId.length === 36 ? '✅' : '❌'}</p>
+            <p>Authority válida: ${config.authority.includes('login.microsoftonline.com') ? '✅' : '❌'}</p>
+            <p>Redirect URI válida: ${config.redirectUri === window.location.origin ? '✅' : '❌'}</p>
+        `;
+    </script>
+</body>
+</html>
