@@ -60,11 +60,23 @@ export const AuthButton: React.FC = () => {
 
 export const SignInPage: React.FC = () => {
     const { instance } = useMsal();
+    const [error, setError] = React.useState<string | null>(null);
+    const [loading, setLoading] = React.useState(false);
 
-    const handleLogin = () => {
-        instance.loginPopup(loginRequest).catch((error) => {
-            console.error('Login failed:', error);
-        });
+    const handleLogin = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            console.log('🔐 Iniciando login...');
+            
+            const response = await instance.loginPopup(loginRequest);
+            console.log('✅ Login bem-sucedido:', response);
+        } catch (err: any) {
+            console.error('❌ Erro no login:', err);
+            setError(err.message || 'Erro ao fazer login');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -101,10 +113,22 @@ export const SignInPage: React.FC = () => {
                     fullWidth
                     startIcon={<LoginOutlined />}
                     onClick={handleLogin}
+                    disabled={loading}
                     sx={{ py: 1.5 }}
                 >
-                    Entrar com Microsoft
+                    {loading ? 'Entrando...' : 'Entrar com Microsoft'}
                 </Button>
+                
+                {error && (
+                    <Typography 
+                        variant="body2" 
+                        color="error" 
+                        sx={{ mt: 2, p: 1, bgcolor: 'error.light', borderRadius: 1 }}
+                    >
+                        {error}
+                    </Typography>
+                )}
+                
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
                     v1.0.0-beta • Ambiente de demonstração
                 </Typography>

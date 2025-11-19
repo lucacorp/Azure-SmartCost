@@ -53,7 +53,8 @@ var corsOrigins = builder.Configuration.GetSection("CORS:AllowedOrigins").Get<st
     "http://localhost:3000",
     "https://localhost:3000",
     "https://victorious-ground-003efd50f.3.azurestaticapps.net",
-    "https://victorious-ground-003efd50f-preview.eastus2.3.azurestaticapps.net"
+    "https://victorious-ground-003efd50f-preview.eastus2.3.azurestaticapps.net",
+    "https://lucacorp.github.io"
 };
 
 builder.Services.AddCors(options =>
@@ -109,7 +110,9 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("permission", Permissions.ManageThresholds));
 });
 
-// Configure Cosmos DB
+// Configure Cosmos DB - TEMPORARIAMENTE DESABILITADO
+// TODO: Resolver problema com runtimes no deploy e reabilitar
+/*
 builder.Services.Configure<CosmosDbSettings>(
     builder.Configuration.GetSection("CosmosDb"));
 
@@ -129,6 +132,7 @@ builder.Services.AddSingleton<CosmosClient>(sp =>
 // Register services
 // Cosmos DB Service
 builder.Services.AddSingleton<ICosmosDbService, CosmosDbService>();
+*/
 builder.Services.AddSingleton<IAlertService, AlertService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
@@ -139,7 +143,7 @@ builder.Services.AddScoped<ICostAnalyticsService, CostAnalyticsService>();
 builder.Services.AddScoped<IMonitoringService, MonitoringService>();
 
 // Add Budget Management Services
-builder.Services.AddScoped<IBudgetManagementService, BudgetManagementService>();
+// builder.Services.AddScoped<IBudgetManagementService, BudgetManagementService>();
 
 // Add Multi-Tenancy Services
 builder.Services.AddScoped<AzureSmartCost.Shared.Interfaces.ITenantContext, AzureSmartCost.Shared.Interfaces.TenantContext>();

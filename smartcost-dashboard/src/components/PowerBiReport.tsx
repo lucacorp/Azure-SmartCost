@@ -58,15 +58,23 @@ const PowerBiReport: React.FC<PowerBiReportProps> = ({
         params.append('workspaceId', workspaceId);
       }
 
-      const response = await fetch(`/api/powerbi/embed-config?${params}`, {
+      const apiUrl = process.env.REACT_APP_API_BASE_URL || '';
+      const response = await fetch(`${apiUrl}/powerbi/embed-config?${params}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok) {
+        const text = await response.text();
+        console.error('Power BI API Response:', text);
         throw new Error(`Failed to load embed config: ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('Power BI endpoint retornou HTML, usando modo demo');
+        throw new Error('Power BI não configurado');
       }
 
       const config = await response.json();

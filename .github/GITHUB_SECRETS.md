@@ -1,4 +1,6 @@
-# GitHub Secrets Configuration Guide
+Adicionar salvamento no Cosmos DB (remover comentários do código)
+Atualizar landing page com novo endpoint da Function
+Testar signup end-to-end
 
 Este documento lista todos os secrets necessários para os workflows de CI/CD do Azure SmartCost.
 

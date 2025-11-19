@@ -12,7 +12,7 @@ import {
 } from '../types';
 
 // Configure base API URL (adjust according to your API deployment)
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://localhost:7001/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://smartcost-func-beta.azurewebsites.net/api';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
@@ -43,9 +43,10 @@ apiClient.interceptors.response.use(
 
 // Costs API
 export const costsApi = {
-  // Get current costs
-  getCurrentCosts: async (): Promise<ApiResponse<CostRecord[]>> => {
-    const response = await apiClient.get<ApiResponse<CostRecord[]>>('/costs/current');
+  // Get current costs (NEW - Azure Function endpoint)
+  getCurrentCosts: async (subscriptionId?: string): Promise<any> => {
+    const url = subscriptionId ? `/costs/${subscriptionId}` : '/costs';
+    const response = await apiClient.get(url);
     return response.data;
   },
 
@@ -67,37 +68,48 @@ export const costsApi = {
     return response.data;
   },
 };
-
 // Alerts API
 export const alertsApi = {
-  // Get active thresholds
-  getActiveThresholds: async (): Promise<ApiResponse<CostThreshold[]>> => {
-    const response = await apiClient.get<ApiResponse<CostThreshold[]>>('/alerts/thresholds');
+  // Get alerts for subscription (NEW)
+  getAlerts: async (subscriptionId: string): Promise<any> => {
+    const response = await apiClient.get(`/alerts/${subscriptionId}`);
     return response.data;
   },
 
-  // Evaluate alerts
-  evaluateAlerts: async (days: number = 7): Promise<ApiResponse<CostAlert[]>> => {
-    const response = await apiClient.post<ApiResponse<CostAlert[]>>(`/alerts/evaluate?days=${days}`);
+  // Create new alert (NEW)
+  createAlert: async (alertData: any): Promise<any> => {
+    const response = await apiClient.post('/alerts', alertData);
     return response.data;
   },
 
-  // Get alert statistics
-  getAlertStatistics: async (): Promise<ApiResponse<any>> => {
-    const response = await apiClient.get<ApiResponse<any>>('/alerts/statistics');
+  // Delete alert (NEW)
+  deleteAlert: async (alertId: string): Promise<any> => {
+    const response = await apiClient.delete(`/alerts/${alertId}`);
     return response.data;
   },
+
+  // Get active thresholds (legacy - keep for compatibility)
+  getActiveThresholds: async (): Promise<ApiResponse<any[]>> => {
+    const response = await apiClient.get<ApiResponse<any[]>>('/alerts/active');
+    return response.data;
+  }
 };
 
 // Dashboard API
 export const dashboardApi = {
-  // Get dashboard overview
-  getOverview: async (days: number = 30): Promise<ApiResponse<DashboardOverview>> => {
-    const response = await apiClient.get<ApiResponse<DashboardOverview>>(`/dashboard/overview?days=${days}`);
+  // Get dashboard overview (NEW - Azure Function)
+  getOverview: async (subscriptionId?: string): Promise<any> => {
+    // Use query parameter instead of path parameter
+    const subId = subscriptionId || process.env.REACT_APP_SUBSCRIPTION_ID;
+    const url = `/dashboard?subscriptionId=${subId}`;
+    const response = await apiClient.get(url);
+    // API returns {success: true, data: {...}}
+    // axios response.data = {success: true, data: {...}}
+    // So we return the whole response.data (which has success + data properties)
     return response.data;
   },
 
-  // Get trend data
+  // Get trend data (legacy - keep for compatibility)
   getTrends: async (days: number = 14, groupBy: string = 'daily'): Promise<ApiResponse<TrendData>> => {
     const response = await apiClient.get<ApiResponse<TrendData>>(`/dashboard/trends?days=${days}&groupBy=${groupBy}`);
     return response.data;

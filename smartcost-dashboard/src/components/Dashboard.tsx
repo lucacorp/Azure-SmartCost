@@ -14,6 +14,9 @@ import {
   Tabs,
   IconButton,
   Tooltip,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -22,6 +25,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   Assessment as PowerBiIcon,
+  Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -37,9 +41,9 @@ import {
   CostOptimization,
   BudgetAnalysis,
 } from './PowerBiReport';
+import { DashboardMetrics } from './DashboardMetrics';
 import api from '../services/api';
 import { DashboardOverview, TrendData, ChartData, TimeSeriesData } from '../types';
-import { mockApi, mockDashboardMetrics, mockCostData, mockAlerts, mockRecommendations } from '../data/mockData';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -66,7 +70,7 @@ function TabPanel(props: TabPanelProps) {
 export const Dashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
-  const [powerBiEnabled, setPowerBiEnabled] = useState(false); // Disabled until Power BI is configured
+  const [powerBiEnabled, setPowerBiEnabled] = useState(true); // ✅ Habilitado para produção
   const queryClient = useQueryClient();
 
   // Fetch dashboard overview
@@ -78,12 +82,16 @@ export const Dashboard: React.FC = () => {
   } = useQuery({
     queryKey: ['dashboard-overview', selectedPeriod],
     queryFn: async () => {
-      // TODO: Replace with real API call once backend is ready
-      // return api.dashboard.getOverview(selectedPeriod);
-      return mockApi.getDashboardMetrics();
+      // Real API call to Azure Function
+      const response = await api.dashboard.getOverview();
+      console.log('📊 Dashboard API Full Response:', response);
+      console.log('📊 Dashboard Data:', response.data);
+      // API returns {success: true, data: {...}}
+      // We want to access response.data which contains the actual dashboard data
+      return response;
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
-    staleTime: 10000, // Consider fresh for 10 seconds
+    refetchInterval: 60000, // Refresh every 60 seconds (cache is 1h)
+    staleTime: 30000, // Consider fresh for 30 seconds
   });
 
   // Fetch trend data
@@ -94,51 +102,12 @@ export const Dashboard: React.FC = () => {
   } = useQuery({
     queryKey: ['dashboard-trends', selectedPeriod],
     queryFn: async () => {
-      // TODO: Replace with real API call once backend is ready
-      // return api.dashboard.getTrends(selectedPeriod, 'daily');
-      return mockApi.getCostData();
+      // Real API call to get costs
+      const response = await api.costs.getCurrentCosts();
+      return response.data;
     },
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     staleTime: 10000,
-  });
-
-  // Fetch alerts statistics
-  const {
-    data: alertStats,
-    isLoading: alertsLoading,
-    error: alertsError,
-  } = useQuery({
-    queryKey: ['alert-statistics'],
-    queryFn: async () => {
-      // TODO: Replace with real API call once backend is ready
-      // return api.alerts.getAlertStatistics();
-      const alerts = await mockApi.getAlerts();
-      return {
-        total: alerts.length,
-        unread: alerts.filter(a => !a.isRead).length,
-        critical: alerts.filter(a => a.severity === 'warning' || a.severity === 'error').length,
-        data: {
-          thresholdConfiguration: {
-            totalThresholds: 12,
-            activeThresholds: 8,
-          },
-          recentActivity: {
-            last7Days: {
-              totalAlerts: alerts.length,
-              criticalAlerts: alerts.filter(a => a.severity === 'error').length,
-              warningAlerts: alerts.filter(a => a.severity === 'warning').length,
-              infoAlerts: alerts.filter(a => a.severity === 'info').length,
-            },
-          },
-          healthStatus: {
-            status: 'Good',
-            lastEvaluated: new Date().toISOString(),
-          },
-        },
-      };
-    },
-    refetchInterval: 60000, // Refresh every minute
-    staleTime: 30000,
   });
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -163,31 +132,36 @@ export const Dashboard: React.FC = () => {
     return <CheckCircleIcon />;
   };
 
-  // Transform data for charts
-  const serviceChartData: ChartData[] = overview?.data?.byService?.map(item => ({
-    name: item.serviceName,
-    value: item.totalCost,
-    label: `${item.serviceName}: $${item.totalCost.toLocaleString()}`,
+  // Log para debug
+  console.log('📊 Dashboard Overview Data:', overview);
+
+  // Transform data for charts - usar dados reais da API
+  // Se tiver dados, eles vêm em overview.data
+  const dashboardData = overview?.data || overview;
+
+  // Preparar dados para os gráficos a partir da API real
+  const timeSeriesData: TimeSeriesData[] = overview?.data?.DailyTrend?.map((item: any) => ({
+    date: item.Date || item.date,
+    value: item.Cost || item.value || 0,
   })) || [];
 
-  const resourceGroupChartData: ChartData[] = overview?.data?.byResourceGroup?.map(item => ({
-    name: item.resourceGroup,
-    value: item.totalCost,
-    label: `${item.resourceGroup}: $${item.totalCost.toLocaleString()}`,
+  const serviceChartData: ChartData[] = overview?.data?.CostByService?.map((item: any) => ({
+    name: item.ServiceName || item.name,
+    value: item.Cost || item.value || 0,
   })) || [];
 
-  const timeSeriesData: TimeSeriesData[] = overview?.data?.summary?.dailyCosts?.map(item => ({
-    date: item.date,
-    cost: item.cost,
+  const resourceGroupChartData: ChartData[] = overview?.data?.TopResources?.slice(0, 10).map((item: any) => ({
+    name: item.ResourceName || item.name,
+    value: item.Cost || item.value || 0,
   })) || [];
 
-  if (overviewError || trendsError || alertsError) {
+  if (overviewError || trendsError) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           Failed to load dashboard data. Please check your API connection.
           <br />
-          Error: {overviewError?.message || trendsError?.message || alertsError?.message}
+          Error: {overviewError?.message || trendsError?.message}
         </Alert>
       </Container>
     );
@@ -201,11 +175,10 @@ export const Dashboard: React.FC = () => {
           🏢 Azure SmartCost Dashboard
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {overview?.data?.alertsOverview && (
+          {overview?.data?.Summary && (
             <Chip
-              icon={getHealthStatusIcon(overview.data.alertsOverview.healthStatus)}
-              label={overview.data.alertsOverview.healthStatus}
-              color={getHealthStatusColor(overview.data.alertsOverview.healthStatus)}
+              label={`R$ ${overview.data.Summary.Total?.toFixed(2) || '0.00'}`}
+              color="primary"
               variant="outlined"
             />
           )}
@@ -226,15 +199,121 @@ export const Dashboard: React.FC = () => {
       </Box>
 
       {/* Loading State */}
-      {(overviewLoading || trendsLoading || alertsLoading) && (
+      {(overviewLoading || trendsLoading) && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
           <CircularProgress />
         </Box>
       )}
 
-      {/* Key Metrics */}
+      {/* Dashboard Metrics Component - Adaptar dados da API */}
       {overview?.data && !overviewLoading && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3 }}>
+          <Paper elevation={2} sx={{ p: 3 }}>
+            <Typography variant="h5" gutterBottom>
+              💰 Resumo de Custos
+            </Typography>
+            
+            <Grid container spacing={3} sx={{ mt: 2 }}>
+              {/* Total Cost */}
+              <Grid item xs={12} md={3}>
+                <Card sx={{ bgcolor: 'primary.light', color: 'white' }}>
+                  <CardContent>
+                    <Typography variant="h6">Custo Total</Typography>
+                    <Typography variant="h4">
+                      R$ {overview.data.Summary?.Total?.toFixed(2) || overview.data.TotalCost?.toFixed(2) || '0.00'}
+                    </Typography>
+                    <Typography variant="caption">
+                      {overview.data.Period || 'Últimos 30 dias'} • {overview.data.TopResources?.length || overview.data.Resources?.length || 0} recursos
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Top Resource */}
+              <Grid item xs={12} md={3}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">Recurso com Maior Custo</Typography>
+                    <Typography variant="h5">
+                      R$ {overview.data.TopResources?.[0]?.Cost?.toFixed(2) || overview.data.Resources?.[0]?.Cost?.toFixed(2) || '0.00'}
+                    </Typography>
+                    <Typography variant="caption" noWrap>
+                      {overview.data.TopResources?.[0]?.ResourceName || overview.data.Resources?.[0]?.ResourceName || 'N/A'}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Resource Count */}
+              <Grid item xs={12} md={3}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">Total de Recursos</Typography>
+                    <Typography variant="h4">
+                      {overview.data.TopResources?.length || overview.data.Resources?.length || 0}
+                    </Typography>
+                    <Typography variant="caption">
+                      Recursos monitorados
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Cache Info */}
+              <Grid item xs={12} md={3}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">Previsão Mensal</Typography>
+                    <Typography variant="h4">
+                      R$ {overview.data.Summary?.Forecast?.toFixed(2) || '0.00'}
+                    </Typography>
+                    <Typography variant="caption">
+                      Estimativa fim do mês
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+
+            {/* Top Resources List */}
+            <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
+              📊 Top 10 Recursos por Custo
+            </Typography>
+            <List>
+              {(overview.data.TopResources || overview.data.Resources)?.slice(0, 10).map((resource: any, index: number) => (
+                <ListItem key={resource.ResourceId || index} sx={{ bgcolor: index % 2 === 0 ? 'grey.50' : 'white' }}>
+                  <ListItemText
+                    primary={`${index + 1}. ${resource.ResourceName}`}
+                    secondary={resource.ResourceType?.split('/').pop() || 'Unknown Type'}
+                  />
+                  <Chip 
+                    label={`R$ ${resource.Cost?.toFixed(2) || '0.00'}`} 
+                    color={index < 3 ? 'error' : 'default'}
+                  />
+                </ListItem>
+              ))}
+            </List>
+
+            {/* Recommendations */}
+            {overview.data.Recommendations && overview.data.Recommendations.length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
+                  💡 Recomendações
+                </Typography>
+                {overview.data.Recommendations.map((rec: string, index: number) => (
+                  <Alert key={index} severity="info" sx={{ mb: 1 }}>
+                    {rec}
+                  </Alert>
+                ))}
+              </>
+            )}
+          </Paper>
+        </Box>
+      )}
+
+      {/* Key Metrics - OLD (manter como fallback) */}
+      {overview?.data?.summary && !overviewLoading && (
+        <Grid container spacing={3} sx={{ mb: 3, mt: 2 }}>
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
               title="Current Period Cost"
@@ -253,17 +332,17 @@ export const Dashboard: React.FC = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
-              title="Active Alerts"
-              value={overview.data.alertsOverview.currentAlerts}
-              subtitle={`${overview.data.alertsOverview.criticalAlerts} critical`}
-              color={overview.data.alertsOverview.criticalAlerts > 0 ? 'error' : 'success'}
+              title="Alerts Configurados"
+              value={overview.data.Alerts?.length || 0}
+              subtitle={`Custo: R$ ${overview.data.Summary?.Total?.toFixed(2) || '0.00'}`}
+              color="secondary"
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <MetricCard
-              title="Services Monitored"
-              value={overview.data.dataQuality.uniqueServices}
-              subtitle={`${overview.data.dataQuality.uniqueResourceGroups} resource groups`}
+              title="Serviços Azure"
+              value={overview.data.CostByService?.length || 0}
+              subtitle={`${overview.data.TopResources?.length || 0} recursos`}
               color="success"
             />
           </Grid>
@@ -288,16 +367,27 @@ export const Dashboard: React.FC = () => {
         {/* Overview Tab */}
         <TabPanel value={selectedTab} index={0}>
           <Grid container spacing={3}>
-            {/* Daily Cost Trend */}
-            <Grid item xs={12}>
-              <Paper sx={{ p: 3 }}>
-                <CostAreaChart
-                  title="📈 Daily Cost Trend"
-                  data={timeSeriesData}
-                  height={300}
-                />
-              </Paper>
-            </Grid>
+            {/* Daily Cost Trend - só mostra se tiver dados */}
+            {timeSeriesData && timeSeriesData.length > 0 ? (
+              <Grid item xs={12}>
+                <Paper sx={{ p: 3 }}>
+                  <CostAreaChart
+                    title="📈 Daily Cost Trend"
+                    data={timeSeriesData}
+                    height={300}
+                  />
+                </Paper>
+              </Grid>
+            ) : (
+              <Grid item xs={12}>
+                <Alert severity="info" icon={<TimelineIcon />}>
+                  <strong>Tendência Diária em Desenvolvimento</strong>
+                  <br />
+                  Os dados de custo diário serão disponibilizados em breve. 
+                  Por enquanto, utilize os gráficos de Custo por Serviço e Recursos abaixo.
+                </Alert>
+              </Grid>
+            )}
 
             {/* Cost by Service */}
             <Grid item xs={12} md={6}>
@@ -331,47 +421,54 @@ export const Dashboard: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   📈 Cost Analysis & Trends
                 </Typography>
-                {trends?.data && (
+                {overview?.data && (
                   <Box>
                     <Typography variant="body1" sx={{ mb: 2 }}>
-                      <strong>Trend:</strong> {trends.data.analysis.statistics.trend}
+                      <strong>Período:</strong> {overview.data.Period || 'Últimos 30 dias'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Analysis for {trends.data.analysis.period.startDate} to{' '}
-                      {trends.data.analysis.period.endDate}
+                      Subscription: {overview.data.SubscriptionId}
                     </Typography>
                     
                     <Grid container spacing={2} sx={{ mb: 3 }}>
                       <Grid item xs={6} md={3}>
                         <Typography variant="h6" color="primary">
-                          ${trends.data.analysis.statistics.totalCost.toLocaleString()}
+                          R$ {overview.data.Summary?.Total?.toFixed(2) || '0.00'}
                         </Typography>
-                        <Typography variant="body2">Total Cost</Typography>
+                        <Typography variant="body2">Custo Total</Typography>
                       </Grid>
                       <Grid item xs={6} md={3}>
                         <Typography variant="h6" color="secondary">
-                          ${trends.data.analysis.statistics.averageDailyCost.toLocaleString()}
+                          R$ {overview.data.Summary?.Forecast?.toFixed(2) || '0.00'}
                         </Typography>
-                        <Typography variant="body2">Avg Daily</Typography>
+                        <Typography variant="body2">Previsão Mensal</Typography>
                       </Grid>
                       <Grid item xs={6} md={3}>
-                        <Typography variant="h6" color="error">
-                          ${trends.data.analysis.statistics.highestDailyCost.toLocaleString()}
+                        <Typography variant="h6" color={overview.data.Summary?.ChangePercent > 0 ? "error" : "success"}>
+                          {overview.data.Summary?.ChangePercent?.toFixed(1) || '0.0'}%
                         </Typography>
-                        <Typography variant="body2">Peak Day</Typography>
+                        <Typography variant="body2">Variação</Typography>
                       </Grid>
                       <Grid item xs={6} md={3}>
-                        <Typography variant="h6" color="success">
-                          ${trends.data.analysis.statistics.lowestDailyCost.toLocaleString()}
+                        <Typography variant="h6" color="info">
+                          {overview.data.TopResources?.length || 0}
                         </Typography>
-                        <Typography variant="body2">Lowest Day</Typography>
+                        <Typography variant="body2">Recursos</Typography>
                       </Grid>
                     </Grid>
 
-                    <TrendLineChart
-                      data={trends.data.trendData as any[]}
-                      height={400}
-                    />
+                    {/* Gráfico de tendência - só mostra se tiver dados */}
+                    {overview.data.DailyTrend && overview.data.DailyTrend.length > 0 ? (
+                      <TrendLineChart
+                        data={overview.data.DailyTrend}
+                        height={400}
+                      />
+                    ) : (
+                      <Alert severity="info" sx={{ mt: 2 }}>
+                        📊 Dados de tendência diária serão disponibilizados em breve. 
+                        Use a aba Overview para visualizar custos por serviço e recursos.
+                      </Alert>
+                    )}
                   </Box>
                 )}
               </Paper>
@@ -387,20 +484,23 @@ export const Dashboard: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   🚨 Alerts & Monitoring
                 </Typography>
-                {alertStats?.data && (
+                {overview?.data && (
                   <Box>
                     <Grid container spacing={3} sx={{ mb: 3 }}>
                       <Grid item xs={12} md={6}>
                         <Card variant="outlined">
                           <CardContent>
                             <Typography variant="h6" gutterBottom>
-                              Threshold Configuration
+                              Budget Overview
                             </Typography>
                             <Typography variant="body2" gutterBottom>
-                              Total Thresholds: {alertStats.data.thresholdConfiguration.totalThresholds}
+                              Custo Atual: R$ {overview.data.Summary?.Total?.toFixed(2) || '0.00'}
                             </Typography>
                             <Typography variant="body2" gutterBottom>
-                              Active: {alertStats.data.thresholdConfiguration.activeThresholds}
+                              Previsão: R$ {overview.data.Summary?.Forecast?.toFixed(2) || '0.00'}
+                            </Typography>
+                            <Typography variant="body2" gutterBottom>
+                              Variação: {overview.data.Summary?.ChangePercent?.toFixed(1) || 0}%
                             </Typography>
                           </CardContent>
                         </Card>
@@ -409,37 +509,47 @@ export const Dashboard: React.FC = () => {
                         <Card variant="outlined">
                           <CardContent>
                             <Typography variant="h6" gutterBottom>
-                              Recent Activity (7 days)
+                              Alerts Configurados
                             </Typography>
                             <Typography variant="body2" gutterBottom>
-                              Total Alerts: {alertStats.data.recentActivity.last7Days.totalAlerts}
+                              Total: {overview.data.Alerts?.length || 0}
                             </Typography>
-                            <Typography variant="body2" color="error" gutterBottom>
-                              Critical: {alertStats.data.recentActivity.last7Days.criticalAlerts}
-                            </Typography>
-                            <Typography variant="body2" color="warning" gutterBottom>
-                              Warning: {alertStats.data.recentActivity.last7Days.warningAlerts}
-                            </Typography>
-                            <Typography variant="body2" color="info">
-                              Info: {alertStats.data.recentActivity.last7Days.infoAlerts}
+                            <Typography variant="body2" gutterBottom color="success.main">
+                              Status: {overview.data.Alerts?.length === 0 ? 'Nenhum alerta ativo' : `${overview.data.Alerts.length} alerta(s)`}
                             </Typography>
                           </CardContent>
                         </Card>
                       </Grid>
                     </Grid>
-
-                    <Alert
-                      severity={
-                        alertStats.data.healthStatus.status.includes('Critical') ? 'error' :
-                        alertStats.data.healthStatus.status.includes('Warning') ? 'warning' : 'success'
-                      }
-                      icon={getHealthStatusIcon(alertStats.data.healthStatus.status)}
-                    >
-                      <strong>System Health:</strong> {alertStats.data.healthStatus.status}
-                      <br />
-                      <small>Last evaluated: {alertStats.data.healthStatus.lastEvaluated}</small>
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CheckCircleIcon />
+                        <Box>
+                          <Typography variant="body2" fontWeight="bold">
+                            System Health: Good
+                          </Typography>
+                          <Typography variant="caption">
+                            Última atualização: {new Date().toLocaleString('pt-BR')}
+                          </Typography>
+                        </Box>
+                      </Box>
                     </Alert>
+                    {overview.data.Alerts && overview.data.Alerts.length > 0 && (
+                      <Box>
+                        <Typography variant="h6" gutterBottom>Alertas Ativos</Typography>
+                        {overview.data.Alerts.map((alert: any, index: number) => (
+                          <Alert key={index} severity="warning" sx={{ mb: 1 }}>
+                            {JSON.stringify(alert)}
+                          </Alert>
+                        ))}
+                      </Box>
+                    )}
                   </Box>
+                )}
+                {!overview?.data && !overviewLoading && (
+                  <Alert severity="info">
+                    Nenhum dado de alertas disponível no momento.
+                  </Alert>
                 )}
               </Paper>
             </Grid>
@@ -452,7 +562,7 @@ export const Dashboard: React.FC = () => {
             <Grid item xs={12}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  🎯 Data Quality & System Details
+                  🎯 Dashboard Details
                 </Typography>
                 {overview?.data && (
                   <Box>
@@ -461,20 +571,19 @@ export const Dashboard: React.FC = () => {
                         <Card variant="outlined">
                           <CardContent>
                             <Typography variant="h6" gutterBottom>
-                              Data Quality
+                              📊 Subscription Info
                             </Typography>
                             <Typography variant="body2" gutterBottom>
-                              Records: {overview.data.dataQuality.recordsCount.toLocaleString()}
+                              Subscription ID: {overview.data.SubscriptionId || 'N/A'}
                             </Typography>
                             <Typography variant="body2" gutterBottom>
-                              Date Range: {overview.data.dataQuality.dateRange?.first} to{' '}
-                              {overview.data.dataQuality.dateRange?.last}
+                              Período: {overview.data.Period || 'N/A'}
                             </Typography>
                             <Typography variant="body2" gutterBottom>
-                              Services: {overview.data.dataQuality.uniqueServices}
+                              Moeda: {overview.data.Summary?.Currency || 'BRL'}
                             </Typography>
                             <Typography variant="body2">
-                              Resource Groups: {overview.data.dataQuality.uniqueResourceGroups}
+                              Total de Recursos: {overview.data.TopResources?.length || 0}
                             </Typography>
                           </CardContent>
                         </Card>
@@ -483,23 +592,23 @@ export const Dashboard: React.FC = () => {
                         <Card variant="outlined">
                           <CardContent>
                             <Typography variant="h6" gutterBottom>
-                              System Status
+                              💰 Cost Summary
                             </Typography>
                             <Typography variant="body2" gutterBottom>
-                              Last Updated: {overview.data.dataQuality.lastUpdated}
+                              Custo Atual: R$ {overview.data.Summary?.Total?.toFixed(2) || '0.00'}
                             </Typography>
                             <Typography variant="body2" gutterBottom>
-                              Period: {overview.data.summary.period.startDate} to{' '}
-                              {overview.data.summary.period.endDate}
+                              Previsão Mensal: R$ {overview.data.Summary?.Forecast?.toFixed(2) || '0.00'}
                             </Typography>
                             <Typography variant="body2" gutterBottom>
-                              Days Analyzed: {overview.data.summary.period.daysAnalyzed}
+                              Período: {overview.data.Period || 'Últimos 30 dias'}
                             </Typography>
-                            <Chip
-                              label={overview.data.alertsOverview.healthStatus}
-                              color={getHealthStatusColor(overview.data.alertsOverview.healthStatus)}
-                              size="small"
-                            />
+                            <Typography variant="body2" gutterBottom>
+                              Variação: {overview.data.Summary?.ChangePercent?.toFixed(1) || '0.0'}%
+                            </Typography>
+                            <Typography variant="body2">
+                              Serviços: {overview.data.CostByService?.length || 0}
+                            </Typography>
                           </CardContent>
                         </Card>
                       </Grid>
@@ -514,7 +623,6 @@ export const Dashboard: React.FC = () => {
         {/* Power BI Tab */}
         <TabPanel value={selectedTab} index={4}>
           <Grid container spacing={3}>
-            {/* Executive Dashboard */}
             <Grid item xs={12}>
               <ExecutiveDashboard
                 height="500px"
@@ -522,8 +630,6 @@ export const Dashboard: React.FC = () => {
                 onError={(error) => console.error('Executive dashboard error:', error)}
               />
             </Grid>
-
-            {/* Detailed Analysis */}
             <Grid item xs={12} md={6}>
               <DetailedCostAnalysis
                 height="400px"
@@ -531,8 +637,6 @@ export const Dashboard: React.FC = () => {
                 onError={(error) => console.error('Detailed analysis error:', error)}
               />
             </Grid>
-
-            {/* Cost Optimization */}
             <Grid item xs={12} md={6}>
               <CostOptimization
                 height="400px"
@@ -540,8 +644,6 @@ export const Dashboard: React.FC = () => {
                 onError={(error) => console.error('Cost optimization error:', error)}
               />
             </Grid>
-
-            {/* Budget Analysis */}
             <Grid item xs={12}>
               <BudgetAnalysis
                 height="400px"
@@ -555,3 +657,5 @@ export const Dashboard: React.FC = () => {
     </Container>
   );
 };
+
+export default Dashboard;

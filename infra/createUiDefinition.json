@@ -1,0 +1,193 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "basics": [
+      {
+        "name": "appName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Application Name",
+        "defaultValue": "smartcost",
+        "toolTip": "Nome base para todos os recursos Azure (6-20 caracteres)",
+        "constraints": {
+          "required": true,
+          "regex": "^[a-z0-9]{6,20}$",
+          "validationMessage": "Apenas letras minúsculas e números, 6-20 caracteres"
+        }
+      },
+      {
+        "name": "location",
+        "type": "Microsoft.Common.OptionsGroup",
+        "label": "Region",
+        "defaultValue": "East US",
+        "toolTip": "Região Azure para deploy",
+        "constraints": {
+          "allowedValues": [
+            { "label": "East US", "value": "eastus" },
+            { "label": "West US", "value": "westus" },
+            { "label": "West Europe", "value": "westeurope" },
+            { "label": "Brazil South", "value": "brazilsouth" }
+          ],
+          "required": true
+        }
+      }
+    ],
+    "steps": [
+      {
+        "name": "azureConfig",
+        "label": "Azure Configuration",
+        "elements": [
+          {
+            "name": "subscriptionInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "SmartCost analisará custos da subscription selecionada. Você pode adicionar mais subscriptions depois."
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Azure Subscription ID",
+            "defaultValue": "[subscription().subscriptionId]",
+            "toolTip": "ID da subscription a ser monitorada",
+            "constraints": {
+              "required": true,
+              "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "validationMessage": "Informe um Subscription ID válido"
+            }
+          }
+        ]
+      },
+      {
+        "name": "features",
+        "label": "Features",
+        "elements": [
+          {
+            "name": "enablePowerBI",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Enable Power BI Integration",
+            "defaultValue": "No",
+            "toolTip": "Habilita relatórios avançados no Power BI (requer configuração adicional)",
+            "constraints": {
+              "allowedValues": [
+                { "label": "Yes", "value": true },
+                { "label": "No", "value": false }
+              ],
+              "required": true
+            }
+          },
+          {
+            "name": "powerBIConfig",
+            "type": "Microsoft.Common.Section",
+            "label": "Power BI Settings",
+            "elements": [
+              {
+                "name": "powerBIInfo",
+                "type": "Microsoft.Common.InfoBox",
+                "visible": true,
+                "options": {
+                  "icon": "Warning",
+                  "text": "Configure o Power BI App Registration antes de preencher esses campos. Consulte a documentação."
+                }
+              },
+              {
+                "name": "clientId",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Power BI Client ID",
+                "defaultValue": "",
+                "toolTip": "Azure AD App Registration Client ID para Power BI",
+                "constraints": {
+                  "required": "[steps('features').enablePowerBI]",
+                  "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "validationMessage": "Informe um Client ID válido"
+                }
+              },
+              {
+                "name": "clientSecret",
+                "type": "Microsoft.Common.PasswordBox",
+                "label": {
+                  "password": "Power BI Client Secret",
+                  "confirmPassword": "Confirm Client Secret"
+                },
+                "toolTip": "Azure AD App Registration Client Secret",
+                "constraints": {
+                  "required": "[steps('features').enablePowerBI]"
+                },
+                "options": {
+                  "hideConfirmation": false
+                }
+              },
+              {
+                "name": "workspaceId",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Power BI Workspace ID",
+                "defaultValue": "",
+                "toolTip": "ID do workspace Power BI",
+                "constraints": {
+                  "required": "[steps('features').enablePowerBI]",
+                  "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                  "validationMessage": "Informe um Workspace ID válido"
+                }
+              }
+            ],
+            "visible": "[steps('features').enablePowerBI]"
+          }
+        ]
+      },
+      {
+        "name": "alerts",
+        "label": "Budget Alerts",
+        "elements": [
+          {
+            "name": "alertsInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "Configure alertas de budget para receber notificações quando os custos ultrapassarem os limites."
+            }
+          },
+          {
+            "name": "budgetLimit",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Monthly Budget Limit (USD)",
+            "defaultValue": "1000",
+            "toolTip": "Limite mensal de budget em dólares",
+            "constraints": {
+              "required": true,
+              "regex": "^[0-9]+$",
+              "validationMessage": "Informe um valor numérico válido"
+            }
+          },
+          {
+            "name": "alertThreshold",
+            "type": "Microsoft.Common.Slider",
+            "min": 50,
+            "max": 100,
+            "label": "Alert Threshold (%)",
+            "defaultValue": 80,
+            "showStepMarkers": false,
+            "toolTip": "Porcentagem do budget que dispara alerta",
+            "constraints": {
+              "required": false
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "appName": "[basics('appName')]",
+      "location": "[basics('location')]",
+      "subscriptionId": "[steps('azureConfig').subscriptionId]",
+      "enablePowerBI": "[steps('features').enablePowerBI]",
+      "powerBIClientId": "[steps('features').powerBIConfig.clientId]",
+      "powerBIClientSecret": "[steps('features').powerBIConfig.clientSecret]",
+      "powerBIWorkspaceId": "[steps('features').powerBIConfig.workspaceId]",
+      "budgetLimit": "[int(steps('alerts').budgetLimit)]",
+      "alertThreshold": "[steps('alerts').alertThreshold]"
+    }
+  }
+}

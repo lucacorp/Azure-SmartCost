@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using AzureSmartCost.Shared.Models;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Configuration;
 
 namespace AzureSmartCost.Api.Controllers;
 
@@ -10,11 +12,19 @@ namespace AzureSmartCost.Api.Controllers;
 public class BetaSignupController : ControllerBase
 {
     private readonly ILogger<BetaSignupController> _logger;
-    // TODO: Add repository/service for storing beta signups
+    private readonly IConfiguration _configuration;
+    private readonly CosmosClient _cosmosClient;
+    private readonly Container _container;
 
-    public BetaSignupController(ILogger<BetaSignupController> logger)
+    public BetaSignupController(
+        ILogger<BetaSignupController> logger,
+        IConfiguration configuration)
     {
         _logger = logger;
+        _configuration = configuration;
+        // Cosmos DB desabilitado temporariamente devido a problema com runtimes
+        // _cosmosClient = cosmosClient;
+        // _container = cosmosClient.GetContainer("SmartCostDB", "BetaSignups");
     }
 
     [HttpPost]
@@ -43,16 +53,25 @@ public class BetaSignupController : ControllerBase
                 Source = "landing-page"
             };
 
-            // TODO: Save to Cosmos DB
-            // await _betaSignupRepository.CreateAsync(signup);
-
-            // TODO: Send welcome email
-            // await _emailService.SendBetaWelcomeEmailAsync(signup.Email, signup.Name);
-
-            // TODO: Add to Discord/Slack
-            // await _discordService.NotifyNewBetaSignupAsync(signup);
-
-            _logger.LogInformation("Inscrição beta processada com sucesso: {Id}", signup.Id);
+            // Salvar no Cosmos DB - DESABILITADO TEMPORARIAMENTE
+            // TODO: Reabilitar quando resolver problema com runtimes no deploy
+            /*
+            try
+            {
+                await _container.CreateItemAsync(signup, new PartitionKey(signup.Email));
+                _logger.LogInformation("Beta signup salvo com sucesso: {Id} - {Name} ({Email})", 
+                    signup.Id, signup.Name, signup.Email);
+            }
+            catch (Exception dbEx)
+            {
+                _logger.LogError(dbEx, "Erro ao salvar no Cosmos DB - continuando");
+                // Não retornar erro para o usuário se salvar falhar
+            }
+            */
+            
+            // Log temporário enquanto Cosmos está desabilitado
+            _logger.LogWarning("BETA SIGNUP (não salvo no DB): {Id} - {Name} ({Email}) - {Company} - {Role}", 
+                signup.Id, signup.Name, signup.Email, signup.Company, signup.Role);
 
             return Ok(new
             {
@@ -77,8 +96,10 @@ public class BetaSignupController : ControllerBase
     {
         try
         {
-            // TODO: Get real count from database
-            var count = 8; // Placeholder
+            var query = new QueryDefinition("SELECT VALUE COUNT(1) FROM c");
+            var iterator = _container.GetItemQueryIterator<int>(query);
+            var response = await iterator.ReadNextAsync();
+            var count = response.FirstOrDefault();
             var remaining = Math.Max(0, 50 - count);
 
             return Ok(new

@@ -1,15 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Box } from '@mui/material';
+import { CssBaseline, Box, AppBar, Toolbar, Typography, Tabs, Tab, Container } from '@mui/material';
 import { MsalProvider, useIsAuthenticated } from '@azure/msal-react';
 import { PublicClientApplication } from '@azure/msal-browser';
 import { msalConfig } from './authConfig';
 import { Dashboard } from './components/Dashboard';
+import { BudgetAlerts } from './components/BudgetAlerts';
 import { SignInPage } from './components/AuthButton';
 
 // Initialize MSAL
 const msalInstance = new PublicClientApplication(msalConfig);
+
+// Log MSAL config for debugging
+console.log('🔐 MSAL Config:', {
+  clientId: msalConfig.auth.clientId,
+  authority: msalConfig.auth.authority,
+  redirectUri: msalConfig.auth.redirectUri
+});
 
 // Create a client
 const queryClient = new QueryClient({
@@ -98,6 +106,7 @@ function App() {
 
 function MainContent() {
   const isAuthenticated = useIsAuthenticated();
+  const [currentTab, setCurrentTab] = useState(0);
 
   if (!isAuthenticated) {
     return <SignInPage />;
@@ -105,7 +114,27 @@ function MainContent() {
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <Dashboard />
+      <AppBar position="static" elevation={1}>
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            SmartCost - Azure Cost Management
+          </Typography>
+          <Tabs 
+            value={currentTab} 
+            onChange={(_, newValue) => setCurrentTab(newValue)}
+            textColor="inherit"
+            indicatorColor="secondary"
+          >
+            <Tab label="Dashboard" />
+            <Tab label="Budget Alerts" />
+          </Tabs>
+        </Toolbar>
+      </AppBar>
+      
+      <Container maxWidth="xl" sx={{ mt: 2 }}>
+        {currentTab === 0 && <Dashboard />}
+        {currentTab === 1 && <BudgetAlerts />}
+      </Container>
     </Box>
   );
 }
