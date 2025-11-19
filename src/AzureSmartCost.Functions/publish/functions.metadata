@@ -1,19 +1,217 @@
 [
   {
-    "name": "CollectCostData",
+    "name": "BetaSignup",
     "scriptFile": "AzureSmartCost.Functions.dll",
-    "entryPoint": "AzureSmartCost.Functions.CollectCostData.RunAsync",
+    "entryPoint": "AzureSmartCost.Functions.BetaSignup.Run",
     "language": "dotnet-isolated",
     "properties": {
       "IsCodeless": false
     },
     "bindings": [
       {
-        "name": "timer",
+        "name": "req",
         "direction": "In",
-        "type": "timerTrigger",
-        "schedule": "0 0 * * * *",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "betasignup",
         "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "GetCosts",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.GetCosts.Run",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "costs/{subscriptionId?}",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "GetDashboard",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.GetDashboard.Run",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "dashboard/{subscriptionId?}",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "GetPowerBiConfig",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.GetPowerBiConfig.Run",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "powerbi/embed-config",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "GetPowerBiTemplates",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.GetPowerBiConfig.GetTemplates",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "powerbi/templates",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "GetAlerts",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.ManageBudgetAlerts.GetAlerts",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "alerts/{subscriptionId}",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "CreateAlert",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.ManageBudgetAlerts.CreateAlert",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "alerts",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "DeleteAlert",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.ManageBudgetAlerts.DeleteAlert",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "delete"
+        ],
+        "route": "alerts/{id}",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
       }
     ]
   }

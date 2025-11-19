@@ -1,0 +1,17 @@
+{
+  "spa": {
+    "redirectUris": [
+      "http://localhost:3000",
+      "https://localhost:3000",
+      "https://victorious-ground-003efd50f-preview.eastus2.3.azurestaticapps.net",
+      "https://victorious-ground-003efd50f.3.azurestaticapps.net"
+    ]
+  },
+  "web": {
+    "redirectUris": [],
+    "implicitGrantSettings": {
+      "enableIdTokenIssuance": false,
+      "enableAccessTokenIssuance": false
+    }
+  }
+}
