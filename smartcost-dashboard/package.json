@@ -2,6 +2,7 @@
   "name": "smartcost-dashboard",
   "version": "1.0.0",
   "description": "Azure SmartCost Dashboard - FinOps cost management and monitoring interface",
+  "homepage": "https://blue-flower-0414b9b0f.3.azurestaticapps.net",
   "private": true,
   "dependencies": {
     "@azure/msal-browser": "^4.26.1",
