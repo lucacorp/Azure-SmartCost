@@ -49,7 +49,7 @@ jobs:
         npm run build
       env:
         CI: false
-        REACT_APP_API_BASE_URL: https://smartcost-api-prod.azurewebsites.net/api
+        REACT_APP_API_BASE_URL: https://smartcost-func-beta.azurewebsites.net/api
         REACT_APP_ENVIRONMENT: production
 
     - name: 🚀 Build And Deploy to Static Web Apps
