@@ -179,15 +179,15 @@
       }
     ],
     "outputs": {
-      "appName": "[basics('appName')]",
-      "location": "[basics('location')]",
+      "location": "[location()]",
+      "projectName": "[basics('appName')]",
       "subscriptionId": "[steps('azureConfig').subscriptionId]",
-      "enablePowerBI": "[steps('features').enablePowerBI]",
-      "powerBIClientId": "[steps('features').powerBIConfig.clientId]",
-      "powerBIClientSecret": "[steps('features').powerBIConfig.clientSecret]",
-      "powerBIWorkspaceId": "[steps('features').powerBIConfig.workspaceId]",
-      "budgetLimit": "[int(steps('alerts').budgetLimit)]",
-      "alertThreshold": "[steps('alerts').alertThreshold]"
+      "jwtSecret": "[newGuid()]",
+      "azureAdClientId": "00000000-0000-0000-0000-000000000000",
+      "azureAdClientSecret": "[newGuid()]",
+      "marketplaceClientId": "00000000-0000-0000-0000-000000000000",
+      "marketplaceClientSecret": "[newGuid()]",
+      "marketplacePublisherId": "smartcoast"
     }
   }
 }
