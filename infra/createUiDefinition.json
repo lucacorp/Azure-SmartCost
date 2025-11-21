@@ -9,27 +9,11 @@
         "type": "Microsoft.Common.TextBox",
         "label": "Application Name",
         "defaultValue": "smartcost",
-        "toolTip": "Nome base para todos os recursos Azure (6-20 caracteres)",
+        "toolTip": "Base name for all Azure resources (6-20 characters)",
         "constraints": {
           "required": true,
           "regex": "^[a-z0-9]{6,20}$",
-          "validationMessage": "Apenas letras minúsculas e números, 6-20 caracteres"
-        }
-      },
-      {
-        "name": "location",
-        "type": "Microsoft.Common.OptionsGroup",
-        "label": "Region",
-        "defaultValue": "East US",
-        "toolTip": "Região Azure para deploy",
-        "constraints": {
-          "allowedValues": [
-            { "label": "East US", "value": "eastus" },
-            { "label": "West US", "value": "westus" },
-            { "label": "West Europe", "value": "westeurope" },
-            { "label": "Brazil South", "value": "brazilsouth" }
-          ],
-          "required": true
+          "validationMessage": "Only lowercase letters and numbers, 6-20 characters"
         }
       }
     ],
@@ -63,7 +47,7 @@
       }
     ],
     "outputs": {
-      "location": "[basics('location')]",
+      "location": "[location()]",
       "projectName": "[basics('appName')]",
       "subscriptionId": "[steps('azureConfig').subscriptionId]",
       "jwtSecret": "[newGuid()]",
