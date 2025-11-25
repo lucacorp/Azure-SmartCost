@@ -66,12 +66,3 @@ public class ServiceCost
     [JsonProperty("resourceCount")]
     public int ResourceCount { get; set; }
 }
-
-public class DailyCost
-{
-    [JsonProperty("date")]
-    public string Date { get; set; } = string.Empty;
-    
-    [JsonProperty("cost")]
-    public decimal Cost { get; set; }
-}

@@ -34,4 +34,7 @@ public class BudgetAlert
     
     [JsonProperty("lastCheckedAt")]
     public DateTime? LastCheckedAt { get; set; }
+    
+    [JsonProperty("lastNotificationSent")]
+    public DateTime? LastNotificationSent { get; set; }
 }

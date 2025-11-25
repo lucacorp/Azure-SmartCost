@@ -113,6 +113,7 @@ public class CostService
             var scope = $"/subscriptions/{subscriptionId}";
             var url = $"https://management.azure.com{scope}/providers/Microsoft.CostManagement/query?api-version=2023-11-01";
 
+            // Query 1: Custos por recurso (dados agregados)
             var queryBody = new
             {
                 type = "ActualCost",
@@ -124,7 +125,7 @@ public class CostService
                 },
                 dataset = new
                 {
-                    granularity = "Daily",
+                    granularity = "None",
                     aggregation = new Dictionary<string, object>
                     {
                         ["totalCost"] = new { name = "PreTaxCost", function = "Sum" }
@@ -213,6 +214,10 @@ public class CostService
                 costData.Recommendations = new List<string> { "Nenhum custo registrado no período selecionado" };
             }
 
+            // Query 2: Custos diários (para gráfico de tendências)
+            _logger.LogInformation("Buscando tendência diária de custos...");
+            costData.DailyTrend = await FetchDailyTrendAsync(subscriptionId, start, end, token.Token);
+
             return costData;
         }
         catch (Exception ex)
@@ -240,6 +245,79 @@ public class CostService
         
         var parts = resourceId.Split('/');
         return parts.Length > 0 ? parts[^1] : resourceId;
+    }
+
+    private async Task<List<DailyCost>> FetchDailyTrendAsync(string subscriptionId, string start, string end, string token)
+    {
+        try
+        {
+            var scope = $"/subscriptions/{subscriptionId}";
+            var url = $"https://management.azure.com{scope}/providers/Microsoft.CostManagement/query?api-version=2023-11-01";
+
+            var queryBody = new
+            {
+                type = "ActualCost",
+                timeframe = "Custom",
+                timePeriod = new { from = start, to = end },
+                dataset = new
+                {
+                    granularity = "Daily",
+                    aggregation = new Dictionary<string, object>
+                    {
+                        ["totalCost"] = new { name = "PreTaxCost", function = "Sum" }
+                    }
+                }
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            request.Content = new StringContent(JsonConvert.SerializeObject(queryBody), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Erro ao buscar tendência diária: {StatusCode}", response.StatusCode);
+                return new List<DailyCost>();
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JObject.Parse(content);
+            var rows = result["properties"]?["rows"] as JArray;
+
+            var dailyCosts = new List<DailyCost>();
+            if (rows != null)
+            {
+                foreach (var row in rows)
+                {
+                    var cost = row[0]?.ToObject<decimal>() ?? 0;
+                    var dateValue = row[1]?.ToObject<int>() ?? 0;
+                    
+                    // Converter YYYYMMDD para DateTime
+                    var dateStr = dateValue.ToString();
+                    if (dateStr.Length == 8)
+                    {
+                        var year = int.Parse(dateStr.Substring(0, 4));
+                        var month = int.Parse(dateStr.Substring(4, 2));
+                        var day = int.Parse(dateStr.Substring(6, 2));
+                        var date = new DateTime(year, month, day);
+
+                        dailyCosts.Add(new DailyCost
+                        {
+                            Date = date.ToString("yyyy-MM-dd"),
+                            Cost = cost
+                        });
+                    }
+                }
+            }
+
+            _logger.LogInformation("✅ Tendência diária obtida: {Days} dias", dailyCosts.Count);
+            return dailyCosts.OrderBy(d => d.Date).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar tendência diária");
+            return new List<DailyCost>();
+        }
     }
 
     private List<string> GenerateRecommendations(List<ResourceCost> resources, decimal totalCost)

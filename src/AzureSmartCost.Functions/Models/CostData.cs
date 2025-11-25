@@ -27,11 +27,23 @@ public class CostData
     [JsonProperty("recommendations")]
     public List<string> Recommendations { get; set; } = new();
     
+    [JsonProperty("dailyTrend")]
+    public List<DailyCost> DailyTrend { get; set; } = new();
+    
     [JsonProperty("cachedAt")]
     public DateTime CachedAt { get; set; } = DateTime.UtcNow;
     
     [JsonProperty("ttl")]
     public int Ttl { get; set; } = 3600; // 1 hora de cache
+}
+
+public class DailyCost
+{
+    [JsonProperty("date")]
+    public string Date { get; set; } = string.Empty;
+    
+    [JsonProperty("cost")]
+    public decimal Cost { get; set; }
 }
 
 public class ResourceCost

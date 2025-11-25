@@ -27,6 +27,24 @@
     ]
   },
   {
+    "name": "BudgetAlertChecker",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.BudgetAlertChecker.Run",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "timerInfo",
+        "direction": "In",
+        "type": "timerTrigger",
+        "schedule": "0 0 * * * *",
+        "properties": {}
+      }
+    ]
+  },
+  {
     "name": "GetCosts",
     "scriptFile": "AzureSmartCost.Functions.dll",
     "entryPoint": "AzureSmartCost.Functions.GetCosts.Run",
@@ -206,6 +224,114 @@
           "delete"
         ],
         "route": "alerts/{id}",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "MarketplaceLanding",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.MarketplaceLanding.Run",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "marketplace/landing",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "MarketplaceTest",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.MarketplaceTest.Run",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "get"
+        ],
+        "route": "marketplace/test",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "MarketplaceWebhook",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.MarketplaceWebhook.Run",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "marketplace/webhook",
+        "properties": {}
+      },
+      {
+        "name": "$return",
+        "type": "http",
+        "direction": "Out"
+      }
+    ]
+  },
+  {
+    "name": "TestEmailAlert",
+    "scriptFile": "AzureSmartCost.Functions.dll",
+    "entryPoint": "AzureSmartCost.Functions.TestEmailAlert.Run",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "req",
+        "direction": "In",
+        "type": "httpTrigger",
+        "authLevel": "Anonymous",
+        "methods": [
+          "post"
+        ],
+        "route": "test-email",
         "properties": {}
       },
       {

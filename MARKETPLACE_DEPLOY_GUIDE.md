@@ -179,9 +179,15 @@ Vou criar esse arquivo agora...
    - **Alias:** Azure SmartCost - Cost Optimization Tool
 
 3. **Properties:**
-   - **Category:** Management & Governance
+   - **Category:** Monitoring and Diagnostics ✅ (ou "Developer Tools" se não encontrar)
    - **Industries:** Cross Industry
    - **Legal:** Standard Contract
+   
+   > 📌 **Categorias alternativas aceitas:**
+   > - Monitoring and Diagnostics (recomendado)
+   > - Developer Tools
+   > - Analytics
+   > - Management Tools
 
 4. **Offer Listing:**
    ```

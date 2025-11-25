@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using AzureSmartCost.Functions.Models;
+using AzureSmartCost.Functions.Services;
 
 namespace AzureSmartCost.Functions;
 
@@ -15,10 +16,12 @@ public class ManageBudgetAlerts
 {
     private readonly ILogger _logger;
     private readonly Container _alertsContainer;
+    private readonly IEmailService _emailService;
 
     public ManageBudgetAlerts(ILoggerFactory loggerFactory)
     {
         _logger = loggerFactory.CreateLogger<ManageBudgetAlerts>();
+        _emailService = new EmailService(_logger);
         
         var cosmosEndpoint = Environment.GetEnvironmentVariable("CosmosDb__Endpoint");
         var cosmosKey = Environment.GetEnvironmentVariable("CosmosDb__Key");
@@ -50,6 +53,9 @@ public class ManageBudgetAlerts
                 var result = await iterator.ReadNextAsync();
                 alerts.AddRange(result);
             }
+
+            // Verificar e enviar emails se threshold atingido
+            await CheckAndSendAlertsAsync(alerts);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(new { success = true, data = alerts });
@@ -130,6 +136,48 @@ public class ManageBudgetAlerts
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
             await errorResponse.WriteAsJsonAsync(new { success = false, message = ex.Message });
             return errorResponse;
+        }
+    }
+
+    private async Task CheckAndSendAlertsAsync(System.Collections.Generic.List<BudgetAlert> alerts)
+    {
+        foreach (var alert in alerts)
+        {
+            if (!alert.IsActive) continue;
+
+            var percentage = (alert.CurrentSpend / alert.Amount) * 100;
+            
+            // Enviar email se atingiu o threshold E ainda não enviou hoje
+            if (percentage >= alert.Threshold)
+            {
+                var lastSent = alert.LastNotificationSent ?? DateTime.MinValue;
+                var hoursSinceLastEmail = (DateTime.UtcNow - lastSent).TotalHours;
+                
+                // Enviar no máximo 1 email por dia
+                if (hoursSinceLastEmail >= 24)
+                {
+                    try
+                    {
+                        await _emailService.SendBudgetAlertEmailAsync(
+                            alert.Email,
+                            alert.Name,
+                            alert.Amount,
+                            alert.CurrentSpend,
+                            alert.Threshold
+                        );
+
+                        // Atualizar último envio
+                        alert.LastNotificationSent = DateTime.UtcNow;
+                        await _alertsContainer.UpsertItemAsync(alert, new PartitionKey(alert.Id));
+                        
+                        _logger.LogInformation("📧 Email de alerta enviado para {Email} - {AlertName}", alert.Email, alert.Name);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Erro ao enviar email de alerta para {Email}", alert.Email);
+                    }
+                }
+            }
         }
     }
 }
