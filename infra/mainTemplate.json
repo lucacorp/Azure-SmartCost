@@ -144,6 +144,9 @@
       }
     }
   },
+  "variables": {
+    "staticWebAppLocation": "eastus2"
+  },
   "resources": [
     {
       "type": "Microsoft.Insights/components",
@@ -481,7 +484,7 @@
       "type": "Microsoft.Web/staticSites",
       "apiVersion": "2023-12-01",
       "name": "[parameters('staticWebAppName')]",
-      "location": "[parameters('location')]",
+      "location": "[variables('staticWebAppLocation')]",
       "sku": {
         "name": "Standard",
         "tier": "Standard"
