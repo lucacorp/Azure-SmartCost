@@ -150,11 +150,11 @@ export const AnalyticsDashboard: React.FC = () => {
             <Card>
               <CardContent>
                 <Typography variant="h6">Tendência</Typography>
-                <Typography variant="h4" color={costAnalytics.trendPercentage > 0 ? 'error' : 'success'}>
-                  {costAnalytics.trendPercentage > 0 ? '+' : ''}{costAnalytics.trendPercentage.toFixed(1)}%
+                <Typography variant="h4" color={(costAnalytics.trendPercentage ?? 0) > 0 ? 'error' : 'success'}>
+                  {(costAnalytics.trendPercentage ?? 0) > 0 ? '+' : ''}{(costAnalytics.trendPercentage ?? 0).toFixed(1)}%
                 </Typography>
                 <Typography variant="caption">
-                  {costAnalytics.trendPercentage > 0 ? '📈 Aumento' : '📉 Redução'}
+                  {(costAnalytics.trendPercentage ?? 0) > 0 ? '📈 Aumento' : '📉 Redução'}
                 </Typography>
               </CardContent>
             </Card>
@@ -164,10 +164,10 @@ export const AnalyticsDashboard: React.FC = () => {
               <CardContent>
                 <Typography variant="h6">Top Serviço</Typography>
                 <Typography variant="body1" noWrap>
-                  {costAnalytics.topService}
+                  {costAnalytics.topService ?? 'N/A'}
                 </Typography>
                 <Typography variant="caption">
-                  {costAnalytics.recordCount} registros
+                  {costAnalytics.recordCount ?? 0} registros
                 </Typography>
               </CardContent>
             </Card>
@@ -205,19 +205,19 @@ export const AnalyticsDashboard: React.FC = () => {
                     <Grid container spacing={2}>
                       <Grid item xs={6} md={3}>
                         <Typography variant="h6" color="primary">
-                          {costAnalytics.currency} {costAnalytics.totalCost.toFixed(2)}
+                          {costAnalytics.currency} {(costAnalytics.totalCost ?? 0).toFixed(2)}
                         </Typography>
                         <Typography variant="body2">Custo Total</Typography>
                       </Grid>
                       <Grid item xs={6} md={3}>
                         <Typography variant="h6" color="secondary">
-                          {costAnalytics.currency} {costAnalytics.dailyAverage.toFixed(2)}
+                          {costAnalytics.currency} {(costAnalytics.dailyAverage ?? 0).toFixed(2)}
                         </Typography>
                         <Typography variant="body2">Média Diária</Typography>
                       </Grid>
                       <Grid item xs={6} md={3}>
-                        <Typography variant="h6" color={costAnalytics.trendPercentage > 0 ? "error" : "success"}>
-                          {costAnalytics.trendPercentage > 0 ? '+' : ''}{costAnalytics.trendPercentage.toFixed(1)}%
+                        <Typography variant="h6" color={(costAnalytics.trendPercentage ?? 0) > 0 ? "error" : "success"}>
+                          {(costAnalytics.trendPercentage ?? 0) > 0 ? '+' : ''}{(costAnalytics.trendPercentage ?? 0).toFixed(1)}%
                         </Typography>
                         <Typography variant="body2">Variação</Typography>
                       </Grid>
@@ -304,7 +304,7 @@ export const AnalyticsDashboard: React.FC = () => {
                               Custo Total
                             </Typography>
                             <Typography variant="h6" color="primary">
-                              {service.currency} {service.totalCost.toFixed(2)}
+                              {service.currency} {(service.totalCost ?? 0).toFixed(2)}
                             </Typography>
                           </Grid>
                           <Grid item xs={6} md={2}>
@@ -320,7 +320,7 @@ export const AnalyticsDashboard: React.FC = () => {
                               Média Diária
                             </Typography>
                             <Typography variant="h6" color="secondary">
-                              {service.currency} {service.averageDailyCost.toFixed(2)}
+                              {service.currency} {(service.averageDailyCost ?? 0).toFixed(2)}
                             </Typography>
                           </Grid>
                         </Grid>
@@ -404,7 +404,7 @@ export const AnalyticsDashboard: React.FC = () => {
                               Custo Total
                             </Typography>
                             <Typography variant="h6" color={index < 3 ? 'inherit' : 'primary'}>
-                              {resource.currency} {resource.totalCost.toFixed(2)}
+                              {resource.currency} {(resource.totalCost ?? 0).toFixed(2)}
                             </Typography>
                           </Grid>
                           <Grid item xs={6} md={3}>
