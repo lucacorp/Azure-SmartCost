@@ -1,5 +1,4 @@
 using System;
-using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -12,25 +11,8 @@ var host = new HostBuilder()
     {
         var configuration = context.Configuration;
         
-        // Cosmos DB Client
-        var cosmosConnectionString = configuration["CosmosDb:ConnectionString"] 
-            ?? Environment.GetEnvironmentVariable("CosmosDb");
-        
-        if (!string.IsNullOrEmpty(cosmosConnectionString))
-        {
-            services.AddSingleton<CosmosClient>(sp =>
-            {
-                return new CosmosClient(cosmosConnectionString);
-            });
-
-            // Analytics Service
-            var databaseName = configuration["CosmosDb:DatabaseName"] ?? "SmartCostDB";
-            services.AddSingleton<AnalyticsService>(sp =>
-            {
-                var cosmosClient = sp.GetRequiredService<CosmosClient>();
-                return new AnalyticsService(cosmosClient, databaseName);
-            });
-        }
+        // Analytics Service - usa Azure Cost Management API diretamente
+        services.AddSingleton<AnalyticsService>();
 
         // Configurar logging básico
         services.AddLogging(builder =>
