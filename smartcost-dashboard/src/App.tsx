@@ -7,6 +7,7 @@ import { PublicClientApplication } from '@azure/msal-browser';
 import { msalConfig } from './authConfig';
 import { Dashboard } from './components/Dashboard';
 import { BudgetAlerts } from './components/BudgetAlerts';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { SignInPage } from './components/AuthButton';
 
 // Initialize MSAL
@@ -126,6 +127,7 @@ function MainContent() {
             indicatorColor="secondary"
           >
             <Tab label="Dashboard" />
+            <Tab label="Analytics" />
             <Tab label="Budget Alerts" />
           </Tabs>
         </Toolbar>
@@ -133,7 +135,8 @@ function MainContent() {
       
       <Container maxWidth="xl" sx={{ mt: 2 }}>
         {currentTab === 0 && <Dashboard />}
-        {currentTab === 1 && <BudgetAlerts />}
+        {currentTab === 1 && <AnalyticsDashboard />}
+        {currentTab === 2 && <BudgetAlerts />}
       </Container>
     </Box>
   );

@@ -122,6 +122,54 @@ export const dashboardApi = {
   },
 };
 
+// Analytics API (NEW - Native Analytics alternative to Power BI)
+export const analyticsApi = {
+  // Get cost analytics summary
+  getCostAnalytics: async (subscriptionId: string, startDate?: string, endDate?: string): Promise<any> => {
+    const params = new URLSearchParams();
+    params.append('subscriptionId', subscriptionId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await apiClient.get(`/analytics/cost?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get service cost breakdown
+  getServiceBreakdown: async (subscriptionId: string, startDate?: string, endDate?: string): Promise<any> => {
+    const params = new URLSearchParams();
+    params.append('subscriptionId', subscriptionId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await apiClient.get(`/analytics/services?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get daily cost trend
+  getDailyCostTrend: async (subscriptionId: string, startDate?: string, endDate?: string): Promise<any> => {
+    const params = new URLSearchParams();
+    params.append('subscriptionId', subscriptionId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await apiClient.get(`/analytics/trend?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get top cost resources
+  getTopCostResources: async (subscriptionId: string, startDate?: string, endDate?: string, top: number = 10): Promise<any> => {
+    const params = new URLSearchParams();
+    params.append('subscriptionId', subscriptionId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    params.append('top', top.toString());
+    
+    const response = await apiClient.get(`/analytics/top-resources?${params.toString()}`);
+    return response.data;
+  },
+};
+
 // Power BI API
 export const powerBiApi = {
   // Get Power BI cost data
@@ -253,6 +301,7 @@ export default {
   costs: costsApi,
   alerts: alertsApi,
   dashboard: dashboardApi,
+  analytics: analyticsApi,
   powerbi: powerBiApi,
   health: healthApi,
   utils: apiUtils,
