@@ -21,7 +21,7 @@ namespace AzureSmartCost.Functions
 
         [Function("GetCostAnalytics")]
         public async Task<HttpResponseData> GetCostAnalytics(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "analytics/cost")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "analytics/cost")] HttpRequestData req)
         {
             _logger.LogInformation("Getting cost analytics");
 
@@ -64,7 +64,7 @@ namespace AzureSmartCost.Functions
 
         [Function("GetServiceBreakdown")]
         public async Task<HttpResponseData> GetServiceBreakdown(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "analytics/services")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "analytics/services")] HttpRequestData req)
         {
             _logger.LogInformation("Getting service breakdown");
 
@@ -107,7 +107,7 @@ namespace AzureSmartCost.Functions
 
         [Function("GetDailyCostTrend")]
         public async Task<HttpResponseData> GetDailyCostTrend(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "analytics/trend")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "analytics/trend")] HttpRequestData req)
         {
             _logger.LogInformation("Getting daily cost trend");
 
@@ -150,7 +150,7 @@ namespace AzureSmartCost.Functions
 
         [Function("GetTopCostResources")]
         public async Task<HttpResponseData> GetTopCostResources(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "analytics/top-resources")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "analytics/top-resources")] HttpRequestData req)
         {
             _logger.LogInformation("Getting top cost resources");
 

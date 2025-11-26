@@ -20,11 +20,9 @@ import {
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
-  TrendingUp as TrendingUpIcon,
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
-  Assessment as PowerBiIcon,
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -35,12 +33,6 @@ import {
   CostAreaChart,
   MetricCard,
 } from './Charts';
-import {
-  ExecutiveDashboard,
-  DetailedCostAnalysis,
-  CostOptimization,
-  BudgetAnalysis,
-} from './PowerBiReport';
 import { DashboardMetrics } from './DashboardMetrics';
 import api from '../services/api';
 import { DashboardOverview, TrendData, ChartData, TimeSeriesData } from '../types';
@@ -70,7 +62,6 @@ function TabPanel(props: TabPanelProps) {
 export const Dashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
-  const [powerBiEnabled, setPowerBiEnabled] = useState(true); // ✅ Habilitado para produção
   const queryClient = useQueryClient();
 
   // Fetch dashboard overview
@@ -182,14 +173,6 @@ export const Dashboard: React.FC = () => {
               variant="outlined"
             />
           )}
-          <Tooltip title="Toggle Power BI Integration">
-            <IconButton 
-              onClick={() => setPowerBiEnabled(!powerBiEnabled)} 
-              color={powerBiEnabled ? "primary" : "default"}
-            >
-              <PowerBiIcon />
-            </IconButton>
-          </Tooltip>
           <Tooltip title="Refresh Dashboard">
             <IconButton onClick={handleRefresh} color="primary">
               <RefreshIcon />
@@ -361,7 +344,6 @@ export const Dashboard: React.FC = () => {
           <Tab label="📈 Trends" />
           <Tab label="🚨 Alerts" />
           <Tab label="🎯 Details" />
-          {powerBiEnabled && <Tab label="📊 Power BI" />}
         </Tabs>
 
         {/* Overview Tab */}
@@ -616,40 +598,6 @@ export const Dashboard: React.FC = () => {
                   </Box>
                 )}
               </Paper>
-            </Grid>
-          </Grid>
-        </TabPanel>
-
-        {/* Power BI Tab */}
-        <TabPanel value={selectedTab} index={4}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <ExecutiveDashboard
-                height="500px"
-                className="mb-6"
-                onError={(error) => console.error('Executive dashboard error:', error)}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <DetailedCostAnalysis
-                height="400px"
-                showToolbar={true}
-                onError={(error) => console.error('Detailed analysis error:', error)}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <CostOptimization
-                height="400px"
-                showToolbar={true}
-                onError={(error) => console.error('Cost optimization error:', error)}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <BudgetAnalysis
-                height="400px"
-                showToolbar={true}
-                onError={(error) => console.error('Budget analysis error:', error)}
-              />
             </Grid>
           </Grid>
         </TabPanel>
