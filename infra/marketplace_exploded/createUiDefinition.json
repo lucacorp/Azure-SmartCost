@@ -44,17 +44,86 @@
             }
           }
         ]
+      },
+      {
+        "name": "securityConfig",
+        "label": "Security Configuration",
+        "elements": [
+          {
+            "name": "jwtSecret",
+            "type": "Microsoft.Common.PasswordBox",
+            "label": {
+              "password": "JWT Secret",
+              "confirmPassword": "Confirm JWT Secret"
+            },
+            "toolTip": "Secret key for JWT token generation. Auto-generated for security.",
+            "constraints": {
+              "required": true,
+              "regex": "^.{32,}$",
+              "validationMessage": "Must be at least 32 characters"
+            },
+            "options": {
+              "hideConfirmation": false
+            },
+            "visible": true
+          },
+          {
+            "name": "azureAdClientSecret",
+            "type": "Microsoft.Common.PasswordBox",
+            "label": {
+              "password": "Azure AD Client Secret",
+              "confirmPassword": "Confirm Azure AD Client Secret"
+            },
+            "toolTip": "Client secret for Azure AD authentication. Auto-generated.",
+            "constraints": {
+              "required": true,
+              "regex": "^.{32,}$",
+              "validationMessage": "Must be at least 32 characters"
+            },
+            "options": {
+              "hideConfirmation": false
+            },
+            "visible": true
+          },
+          {
+            "name": "marketplaceClientSecret",
+            "type": "Microsoft.Common.PasswordBox",
+            "label": {
+              "password": "Marketplace Client Secret",
+              "confirmPassword": "Confirm Marketplace Client Secret"
+            },
+            "toolTip": "Client secret for Marketplace integration. Auto-generated.",
+            "constraints": {
+              "required": true,
+              "regex": "^.{32,}$",
+              "validationMessage": "Must be at least 32 characters"
+            },
+            "options": {
+              "hideConfirmation": false
+            },
+            "visible": true
+          },
+          {
+            "name": "securityNote",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "These secrets are automatically generated with strong random values. You can view them later in Azure Key Vault after deployment."
+            }
+          }
+        ]
       }
     ],
     "outputs": {
       "location": "[location()]",
       "projectName": "[basics('appName')]",
       "subscriptionId": "[steps('azureConfig').subscriptionId]",
-      "jwtSecret": "[newGuid()]",
+      "jwtSecret": "[steps('securityConfig').jwtSecret]",
       "azureAdClientId": "00000000-0000-0000-0000-000000000000",
-      "azureAdClientSecret": "[newGuid()]",
+      "azureAdClientSecret": "[steps('securityConfig').azureAdClientSecret]",
       "marketplaceClientId": "00000000-0000-0000-0000-000000000000",
-      "marketplaceClientSecret": "[newGuid()]",
+      "marketplaceClientSecret": "[steps('securityConfig').marketplaceClientSecret]",
       "marketplacePublisherId": "smartcoast"
     }
   }
