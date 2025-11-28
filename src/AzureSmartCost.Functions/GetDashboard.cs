@@ -44,10 +44,22 @@ public class GetDashboard
                 return errorResponse;
             }
 
-            // Buscar custos
+            // Buscar custos (apenas período atual para evitar rate limit)
             var costService = new CostService(_logger);
             var currentCosts = await costService.GetCostsAsync(subscriptionId, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
-            var previousCosts = await costService.GetCostsAsync(subscriptionId, DateTime.UtcNow.AddDays(-60), DateTime.UtcNow.AddDays(-30));
+
+            // Calcular estatísticas baseadas nos dados diários
+            decimal previousTotal = 0;
+            if (currentCosts.DailyTrend != null && currentCosts.DailyTrend.Count >= 7)
+            {
+                // Comparar última semana com semana anterior
+                var lastWeek = currentCosts.DailyTrend.TakeLast(7).Sum(d => d.Cost);
+                var previousWeek = currentCosts.DailyTrend.Skip(Math.Max(0, currentCosts.DailyTrend.Count - 14)).Take(7).Sum(d => d.Cost);
+                previousTotal = previousWeek;
+            }
+
+            var totalCost = currentCosts.TotalCost;
+            var forecast = totalCost > 0 ? (totalCost / 30) * DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month) : 0;
 
             // Montar dashboard
             var dashboard = new DashboardData
@@ -56,30 +68,30 @@ public class GetDashboard
                 Period = "Últimos 30 dias",
                 Summary = new CostSummary
                 {
-                    Total = currentCosts.TotalCost,
-                    Previous = previousCosts.TotalCost,
-                    Change = currentCosts.TotalCost - previousCosts.TotalCost,
-                    ChangePercent = previousCosts.TotalCost > 0 
-                        ? ((currentCosts.TotalCost - previousCosts.TotalCost) / previousCosts.TotalCost) * 100 
+                    Total = totalCost,
+                    Previous = previousTotal,
+                    Change = totalCost - previousTotal,
+                    ChangePercent = previousTotal > 0 
+                        ? ((totalCost - previousTotal) / previousTotal) * 100 
                         : 0,
-                    Forecast = currentCosts.TotalCost * 1.1m, // Estimativa simples: +10%
-                    Currency = "BRL"
+                    Forecast = forecast,
+                    Currency = currentCosts.Currency ?? "BRL"
                 },
-                TopResources = currentCosts.Resources.Take(10).ToList(),
-                CostByService = currentCosts.Resources
+                TopResources = currentCosts.Resources?.Take(10).ToList() ?? new List<ResourceCost>(),
+                CostByService = currentCosts.Resources?
                     .GroupBy(r => r.ResourceType)
                     .Select(g => new ServiceCost
                     {
-                        Service = g.Key,
+                        Service = g.Key ?? "Unknown",
                         Cost = g.Sum(r => r.Cost),
-                        Percentage = (g.Sum(r => r.Cost) / currentCosts.TotalCost) * 100,
+                        Percentage = totalCost > 0 ? (g.Sum(r => r.Cost) / totalCost) * 100 : 0,
                         ResourceCount = g.Count()
                     })
                     .OrderByDescending(s => s.Cost)
                     .Take(10)
-                    .ToList(),
-                DailyTrend = new List<DailyCost>(), // TODO: Implementar trend diário
-                Recommendations = currentCosts.Recommendations,
+                    .ToList() ?? new List<ServiceCost>(),
+                DailyTrend = currentCosts.DailyTrend ?? new List<DailyCost>(),
+                Recommendations = currentCosts.Recommendations ?? new List<string>(),
                 Alerts = new List<BudgetAlert>() // TODO: Buscar do Cosmos
             };
 

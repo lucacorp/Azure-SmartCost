@@ -29,7 +29,7 @@ public class BudgetAlertChecker
         if (!string.IsNullOrEmpty(cosmosEndpoint) && !string.IsNullOrEmpty(cosmosKey))
         {
             var cosmosClient = new CosmosClient(cosmosEndpoint, cosmosKey);
-            _alertsContainer = cosmosClient.GetContainer("SmartCost", "Users");
+            _alertsContainer = cosmosClient.GetContainer("SmartCost", "BudgetAlerts");
         }
     }
 

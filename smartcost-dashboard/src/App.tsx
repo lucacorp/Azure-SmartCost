@@ -9,6 +9,7 @@ import { Dashboard } from './components/Dashboard';
 import { BudgetAlerts } from './components/BudgetAlerts';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { SignInPage } from './components/AuthButton';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Initialize MSAL
 const msalInstance = new PublicClientApplication(msalConfig);
@@ -134,9 +135,11 @@ function MainContent() {
       </AppBar>
       
       <Container maxWidth="xl" sx={{ mt: 2 }}>
-        {currentTab === 0 && <Dashboard />}
-        {currentTab === 1 && <AnalyticsDashboard />}
-        {currentTab === 2 && <BudgetAlerts />}
+        <ErrorBoundary>
+          {currentTab === 0 && <Dashboard />}
+          {currentTab === 1 && <AnalyticsDashboard />}
+          {currentTab === 2 && <BudgetAlerts />}
+        </ErrorBoundary>
       </Container>
     </Box>
   );

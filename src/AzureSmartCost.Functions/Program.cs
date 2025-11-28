@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using AzureSmartCost.Functions;
+using AzureSmartCost.Functions.Services;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
@@ -13,6 +14,9 @@ var host = new HostBuilder()
         
         // Analytics Service - usa Azure Cost Management API diretamente
         services.AddSingleton<AnalyticsService>();
+        
+        // License Service - gerenciamento de licenças
+        services.AddSingleton<LicenseService>();
 
         // Configurar logging básico
         services.AddLogging(builder =>

@@ -44,16 +44,17 @@ public class CostService
     {
         try
         {
-            // Tentar buscar do cache primeiro
+            // Tentar buscar do cache primeiro (válido por 6 horas)
             var cached = await GetFromCacheAsync(subscriptionId);
-            if (cached != null && cached.CachedAt > DateTime.UtcNow.AddHours(-1))
+            if (cached != null && cached.CachedAt > DateTime.UtcNow.AddHours(-6))
             {
-                _logger.LogInformation("Retornando custos do cache para subscription {SubscriptionId}", subscriptionId);
+                _logger.LogInformation("✅ Retornando custos do cache para subscription {SubscriptionId} (cache de {CachedHours:F1}h atrás)", 
+                    subscriptionId, (DateTime.UtcNow - cached.CachedAt).TotalHours);
                 return cached;
             }
 
             // Cache expirado ou não existe, buscar da API
-            _logger.LogInformation("Buscando custos da Azure Cost Management API para subscription {SubscriptionId}", subscriptionId);
+            _logger.LogInformation("🔄 Cache expirado ou inexistente, buscando da Azure Cost Management API...");
             
             var costData = await FetchFromAzureAsync(subscriptionId, startDate, endDate);
             
@@ -65,6 +66,15 @@ public class CostService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao buscar custos para subscription {SubscriptionId}", subscriptionId);
+            
+            // Tentar retornar cache antigo mesmo que expirado
+            var oldCache = await GetFromCacheAsync(subscriptionId);
+            if (oldCache != null)
+            {
+                _logger.LogWarning("⚠️ Retornando cache antigo devido a erro na API");
+                return oldCache;
+            }
+            
             throw;
         }
     }

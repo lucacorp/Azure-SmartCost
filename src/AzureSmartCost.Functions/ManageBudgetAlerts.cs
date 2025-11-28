@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Worker;
@@ -29,7 +30,7 @@ public class ManageBudgetAlerts
         if (!string.IsNullOrEmpty(cosmosEndpoint) && !string.IsNullOrEmpty(cosmosKey))
         {
             var cosmosClient = new CosmosClient(cosmosEndpoint, cosmosKey);
-            _alertsContainer = cosmosClient.GetContainer("SmartCost", "Users"); // Usando Users container
+            _alertsContainer = cosmosClient.GetContainer("SmartCost", "BudgetAlerts");
         }
     }
 
@@ -79,10 +80,16 @@ public class ManageBudgetAlerts
         try
         {
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            _logger.LogInformation("📥 Request body: {Body}", requestBody);
+            
             var alert = JsonConvert.DeserializeObject<BudgetAlert>(requestBody);
+
+            _logger.LogInformation("📦 Deserialized alert: Name={Name}, Amount={Amount}, Email={Email}, Threshold={Threshold}", 
+                alert?.Name, alert?.Amount, alert?.Email, alert?.Threshold);
 
             if (alert == null || string.IsNullOrEmpty(alert.SubscriptionId))
             {
+                _logger.LogWarning("⚠️ Dados inválidos: alert is null or subscriptionId is empty");
                 var badResponse = req.CreateResponse(HttpStatusCode.BadRequest);
                 await badResponse.WriteAsJsonAsync(new { success = false, message = "Dados inválidos" });
                 return badResponse;
@@ -91,8 +98,12 @@ public class ManageBudgetAlerts
             alert.Id = Guid.NewGuid().ToString();
             alert.CreatedAt = DateTime.UtcNow;
             alert.IsActive = true;
+            alert.CurrentSpend = 0; // Inicializar com 0
 
-            await _alertsContainer.CreateItemAsync(alert, new PartitionKey(alert.Id));
+            _logger.LogInformation("💾 Salvando alerta: {AlertId} - Name={Name}, Budget={Amount}, Email={Email}", 
+                alert.Id, alert.Name, alert.Amount, alert.Email);
+
+            await _alertsContainer.CreateItemAsync(alert, new PartitionKey(alert.SubscriptionId));
 
             _logger.LogInformation("✅ Alerta criado: {AlertId} - Budget R$ {Amount}", alert.Id, alert.Amount);
 
@@ -118,17 +129,32 @@ public class ManageBudgetAlerts
 
         try
         {
-            await _alertsContainer.DeleteItemAsync<BudgetAlert>(id, new PartitionKey(id));
+            // Primeiro buscar o alerta para obter o partition key (subscriptionId)
+            var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @id")
+                .WithParameter("@id", id);
+            
+            var iterator = _alertsContainer.GetItemQueryIterator<BudgetAlert>(query);
+            BudgetAlert alertToDelete = null;
+            
+            while (iterator.HasMoreResults)
+            {
+                var result = await iterator.ReadNextAsync();
+                alertToDelete = result.FirstOrDefault();
+                break;
+            }
+
+            if (alertToDelete == null)
+            {
+                var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
+                await notFoundResponse.WriteAsJsonAsync(new { success = false, message = "Alerta não encontrado" });
+                return notFoundResponse;
+            }
+
+            await _alertsContainer.DeleteItemAsync<BudgetAlert>(id, new PartitionKey(alertToDelete.SubscriptionId));
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteAsJsonAsync(new { success = true, message = "Alerta removido" });
             return response;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            var notFoundResponse = req.CreateResponse(HttpStatusCode.NotFound);
-            await notFoundResponse.WriteAsJsonAsync(new { success = false, message = "Alerta não encontrado" });
-            return notFoundResponse;
         }
         catch (Exception ex)
         {

@@ -81,9 +81,9 @@
     },
     "appServiceSku": {
       "type": "string",
-      "defaultValue": "Y1",
+      "defaultValue": "B1",
       "metadata": {
-        "description": "SKU for App Service Plan (Consumption)"
+        "description": "SKU for App Service Plan"
       }
     },
     "jwtSecret": {
@@ -274,25 +274,6 @@
           "partitionKey": {
             "paths": [
               "/marketplaceSubscriptionId"
-            ],
-            "kind": "Hash"
-          }
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('cosmosAccountName'), 'SmartCostDB')]"
-      ]
-    },
-    {
-      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
-      "apiVersion": "2023-11-15",
-      "name": "[format('{0}/{1}/{2}', parameters('cosmosAccountName'), 'SmartCostDB', 'BudgetAlerts')]",
-      "properties": {
-        "resource": {
-          "id": "BudgetAlerts",
-          "partitionKey": {
-            "paths": [
-              "/subscriptionId"
             ],
             "kind": "Hash"
           }

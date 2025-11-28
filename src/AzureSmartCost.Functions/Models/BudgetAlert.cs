@@ -8,6 +8,9 @@ public class BudgetAlert
     [JsonProperty("id")]
     public string Id { get; set; } = Guid.NewGuid().ToString();
     
+    [JsonProperty("type")]
+    public string Type { get; set; } = "alert";
+    
     [JsonProperty("subscriptionId")]
     public string SubscriptionId { get; set; } = string.Empty;
     

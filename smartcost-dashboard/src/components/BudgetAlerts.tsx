@@ -31,15 +31,24 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
 interface BudgetAlert {
-  id: string;
-  subscriptionId: string;
-  name: string;
-  amount: number;
-  currentSpend: number;
-  threshold: number;
-  email: string;
-  isActive: boolean;
-  createdAt: string;
+  id?: string;
+  Id?: string;
+  subscriptionId?: string;
+  SubscriptionId?: string;
+  name?: string;
+  Name?: string;
+  amount?: number;
+  Amount?: number;
+  currentSpend?: number;
+  CurrentSpend?: number;
+  threshold?: number;
+  Threshold?: number;
+  email?: string;
+  Email?: string;
+  isActive?: boolean;
+  IsActive?: boolean;
+  createdAt?: string;
+  CreatedAt?: string;
 }
 
 export const BudgetAlerts: React.FC = () => {
@@ -50,35 +59,61 @@ export const BudgetAlerts: React.FC = () => {
     threshold: '80',
     email: '',
   });
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const queryClient = useQueryClient();
 
   // Get subscription ID (you can get this from context or env)
   const subscriptionId = process.env.REACT_APP_SUBSCRIPTION_ID || 'e6b85c41-c45d-42a5-955f-d4dfb3b13ce9';
 
+  console.log('🔍 BudgetAlerts mounted. SubscriptionId:', subscriptionId);
+
   // Fetch alerts
   const { data: alertsData, isLoading, error } = useQuery({
     queryKey: ['budget-alerts', subscriptionId],
     queryFn: async () => {
-      const response = await api.alerts.getAlerts(subscriptionId);
-      return response;
+      try {
+        console.log('📡 Fetching alerts for subscription:', subscriptionId);
+        const response = await api.alerts.getAlerts(subscriptionId);
+        console.log('✅ Alerts response:', response);
+        return response;
+      } catch (err) {
+        console.error('❌ Error fetching alerts:', err);
+        throw err;
+      }
     },
     refetchInterval: 30000,
+    retry: 1,
   });
 
   // Create alert mutation
   const createMutation = useMutation({
     mutationFn: async (alertData: any) => {
-      return await api.alerts.createAlert({
+      const payload = {
         subscriptionId,
-        ...alertData,
+        name: alertData.name,
         amount: parseFloat(alertData.amount),
         threshold: parseInt(alertData.threshold),
-      });
+        email: alertData.email,
+      };
+      
+      console.log('📤 Sending alert payload:', payload);
+      
+      const response = await api.alerts.createAlert(payload);
+      
+      console.log('📥 Create alert response:', response);
+      
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budget-alerts'] });
       setOpenDialog(false);
       resetForm();
+      setErrorMessage('');
+    },
+    onError: (error: any) => {
+      console.error('Erro ao criar alerta:', error);
+      const message = error?.response?.data?.message || error?.message || 'Erro ao criar alerta. Tente novamente.';
+      setErrorMessage(message);
     },
   });
 
@@ -99,6 +134,7 @@ export const BudgetAlerts: React.FC = () => {
       threshold: '80',
       email: '',
     });
+    setErrorMessage('');
   };
 
   const handleSubmit = () => {
@@ -113,7 +149,15 @@ export const BudgetAlerts: React.FC = () => {
     }
   };
 
-  const alerts = alertsData?.data || [];
+  // Safely extract alerts data with fallback
+  const alerts = Array.isArray(alertsData?.data) ? alertsData.data : [];
+
+  console.log('🔍 BudgetAlerts Debug:', {
+    alertsData,
+    alerts,
+    isLoading,
+    error,
+  });
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -171,23 +215,32 @@ export const BudgetAlerts: React.FC = () => {
                   </TableRow>
                 ) : (
                   alerts.map((alert: BudgetAlert) => {
-                    const percentage = (alert.currentSpend / alert.amount) * 100;
-                    const isNearLimit = percentage >= alert.threshold;
+                    // Support both lowercase and PascalCase properties from API
+                    const id = alert.id || alert.Id || '';
+                    const name = alert.name || alert.Name || 'Sem nome';
+                    const amount = alert.amount ?? alert.Amount ?? 0;
+                    const currentSpend = alert.currentSpend ?? alert.CurrentSpend ?? 0;
+                    const threshold = alert.threshold ?? alert.Threshold ?? 80;
+                    const email = alert.email || alert.Email || 'Sem email';
+                    const isActive = alert.isActive ?? alert.IsActive ?? true;
+                    
+                    const percentage = amount > 0 ? (currentSpend / amount) * 100 : 0;
+                    const isNearLimit = percentage >= threshold;
                     
                     return (
-                      <TableRow key={alert.id}>
-                        <TableCell>{alert.name}</TableCell>
-                        <TableCell align="right">R$ {alert.amount.toFixed(2)}</TableCell>
+                      <TableRow key={id}>
+                        <TableCell>{name}</TableCell>
+                        <TableCell align="right">R$ {amount.toFixed(2)}</TableCell>
                         <TableCell align="right">
-                          R$ {alert.currentSpend.toFixed(2)}
+                          R$ {currentSpend.toFixed(2)}
                           <Typography variant="caption" display="block" color="text.secondary">
                             {percentage.toFixed(1)}%
                           </Typography>
                         </TableCell>
-                        <TableCell align="right">{alert.threshold}%</TableCell>
-                        <TableCell>{alert.email}</TableCell>
+                        <TableCell align="right">{threshold}%</TableCell>
+                        <TableCell>{email}</TableCell>
                         <TableCell align="center">
-                          {alert.isActive ? (
+                          {isActive ? (
                             <Chip
                               icon={isNearLimit ? <NotificationsActiveIcon /> : <NotificationsIcon />}
                               label={isNearLimit ? 'Alerta!' : 'Ativo'}
@@ -202,7 +255,7 @@ export const BudgetAlerts: React.FC = () => {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleDelete(alert.id)}
+                            onClick={() => handleDelete(id)}
                             disabled={deleteMutation.isPending}
                           >
                             <DeleteIcon />
@@ -222,6 +275,16 @@ export const BudgetAlerts: React.FC = () => {
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Criar Novo Alerta de Orçamento</DialogTitle>
         <DialogContent>
+          {errorMessage && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {errorMessage}
+            </Alert>
+          )}
+          {createMutation.isSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Alerta criado com sucesso!
+            </Alert>
+          )}
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="Nome do Alerta"
