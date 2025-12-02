@@ -1,6 +1,11 @@
 ﻿@description('The location for all resources')
 param location string = resourceGroup().location
 
+@description('Recommended locations for full feature support (Static Web App): westus2, centralus, eastus2, westeurope, eastasia')
+var recommendedLocations = ['westus2', 'centralus', 'eastus2', 'westeurope', 'eastasia']
+var isRecommendedLocation = contains(recommendedLocations, location)
+var staticWebAppLocation = isRecommendedLocation ? location : 'eastus2'
+
 @description('Environment name (dev, staging, prod)')
 param environmentName string = 'dev'
 
@@ -372,14 +377,13 @@ resource apiApp 'Microsoft.Web/sites@2022-09-01' = {
   }
 }
 
-// Static Web App for Frontend (NOT available in Brazil South - deploy separately in eastus2)
-/* 
+// Static Web App for Frontend (deployed in supported region)
 resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
   name: staticWebAppName
-  location: location
+  location: staticWebAppLocation
   sku: {
-    name: 'Standard'
-    tier: 'Standard'
+    name: 'Free'
+    tier: 'Free'
   }
   properties: {
     repositoryUrl: ''
@@ -391,7 +395,6 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
     }
   }
 }
-*/
 
 // App Service Plan for Functions
 resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
@@ -584,35 +587,14 @@ output apiAppName string = apiApp.name
 output apiAppUrl string = 'https://${apiApp.properties.defaultHostName}'
 output apiAppPrincipalId string = apiApp.identity.principalId
 
-// Dashboard Access Instructions
-output dashboardInstructions string = '''
-⚠️ IMPORTANT: Static Web App is not available in Brazil South.
+// Static Web App outputs
+output staticWebAppName string = staticWebApp.name
+output staticWebAppUrl string = 'https://${staticWebApp.properties.defaultHostname}'
+output staticWebAppLocation string = staticWebApp.location
 
-To access the SmartCost dashboard, choose one of these options:
+// Location Warning
+output locationWarning string = isRecommendedLocation ? 'All resources deployed in ${location}' : 'WARNING: Static Web App deployed in ${staticWebAppLocation} (not available in ${location}). Other resources in ${location}.'
 
-OPTION 1 - Deploy Static Web App in East US 2 (Recommended):
-  1. Go to Azure Portal → Create Static Web App
-  2. Location: East US 2
-  3. Connect to GitHub repo: smartcost-dashboard folder
-  4. Build preset: React
-  5. After deploy, configure API URL in app settings:
-     REACT_APP_API_URL=${apiApp.properties.defaultHostName}
-
-OPTION 2 - Deploy to Storage Static Website:
-  1. Enable Static Website on storage account: ${storage.name}
-  2. Build React app: cd smartcost-dashboard && npm run build
-  3. Upload build/ folder to $web container
-  4. Access via: https://${storage.name}.z15.web.core.windows.net
-
-OPTION 3 - Use API directly (for testing):
-  API Base URL: https://${apiApp.properties.defaultHostName}
-  Health check: https://${apiApp.properties.defaultHostName}/api/health
-  Swagger UI: https://${apiApp.properties.defaultHostName}/swagger
-'''
-
-// Static Web App outputs (commented - not available in Brazil South)
-// output staticWebAppName string = staticWebApp.name
-// output staticWebAppUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 output cosmosAccountName string = cosmosAccount.name
 output keyVaultName string = keyVault.name
 output storageAccountName string = storage.name

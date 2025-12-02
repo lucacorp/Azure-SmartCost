@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.38.33.27573",
-      "templateHash": "5643481902729341370"
+      "templateHash": "4595015393381442064"
     }
   },
   "parameters": {
@@ -149,6 +149,17 @@
         "description": "Azure Marketplace Publisher ID"
       }
     }
+  },
+  "variables": {
+    "recommendedLocations": [
+      "westus2",
+      "centralus",
+      "eastus2",
+      "westeurope",
+      "eastasia"
+    ],
+    "isRecommendedLocation": "[contains(variables('recommendedLocations'), parameters('location'))]",
+    "staticWebAppLocation": "[if(variables('isRecommendedLocation'), parameters('location'), 'eastus2')]"
   },
   "resources": [
     {
@@ -484,6 +495,25 @@
       ]
     },
     {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('staticWebAppName')]",
+      "location": "[variables('staticWebAppLocation')]",
+      "sku": {
+        "name": "Free",
+        "tier": "Free"
+      },
+      "properties": {
+        "repositoryUrl": "",
+        "branch": "main",
+        "buildProperties": {
+          "appLocation": "/smartcost-dashboard",
+          "apiLocation": "",
+          "outputLocation": "build"
+        }
+      }
+    },
+    {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2022-09-01",
       "name": "[format('{0}-plan', parameters('functionAppName'))]",
@@ -722,9 +752,21 @@
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Web/sites', parameters('apiAppName')), '2022-09-01', 'full').identity.principalId]"
     },
-    "dashboardInstructions": {
+    "staticWebAppName": {
       "type": "string",
-      "value": "⚠️ IMPORTANT: Static Web App is not available in Brazil South.\r\n\r\nTo access the SmartCost dashboard, choose one of these options:\r\n\r\nOPTION 1 - Deploy Static Web App in East US 2 (Recommended):\r\n  1. Go to Azure Portal → Create Static Web App\r\n  2. Location: East US 2\r\n  3. Connect to GitHub repo: smartcost-dashboard folder\r\n  4. Build preset: React\r\n  5. After deploy, configure API URL in app settings:\r\n     REACT_APP_API_URL=${apiApp.properties.defaultHostName}\r\n\r\nOPTION 2 - Deploy to Storage Static Website:\r\n  1. Enable Static Website on storage account: ${storage.name}\r\n  2. Build React app: cd smartcost-dashboard && npm run build\r\n  3. Upload build/ folder to $web container\r\n  4. Access via: https://${storage.name}.z15.web.core.windows.net\r\n\r\nOPTION 3 - Use API directly (for testing):\r\n  API Base URL: https://${apiApp.properties.defaultHostName}\r\n  Health check: https://${apiApp.properties.defaultHostName}/api/health\r\n  Swagger UI: https://${apiApp.properties.defaultHostName}/swagger\r\n"
+      "value": "[parameters('staticWebAppName')]"
+    },
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName')), '2022-09-01').defaultHostname)]"
+    },
+    "staticWebAppLocation": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName')), '2022-09-01', 'full').location]"
+    },
+    "locationWarning": {
+      "type": "string",
+      "value": "[if(variables('isRecommendedLocation'), format('All resources deployed in {0}', parameters('location')), format('WARNING: Static Web App deployed in {0} (not available in {1}). Other resources in {2}.', variables('staticWebAppLocation'), parameters('location'), parameters('location')))]"
     },
     "cosmosAccountName": {
       "type": "string",
