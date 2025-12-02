@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.38.33.27573",
-      "templateHash": "10303667540003780944"
+      "templateHash": "5643481902729341370"
     }
   },
   "parameters": {
@@ -53,7 +53,7 @@
     },
     "storageAccountName": {
       "type": "string",
-      "defaultValue": "[format('{0}stg{1}', parameters('projectName'), uniqueString(resourceGroup().id))]",
+      "defaultValue": "[format('stg{0}', substring(uniqueString(resourceGroup().id), 0, 13))]",
       "metadata": {
         "description": "The name of the Storage Account"
       }
@@ -67,7 +67,7 @@
     },
     "keyVaultName": {
       "type": "string",
-      "defaultValue": "[format('{0}-kv-{1}-{2}', parameters('projectName'), parameters('environmentName'), uniqueString(resourceGroup().id))]",
+      "defaultValue": "[format('kv-{0}', uniqueString(resourceGroup().id))]",
       "metadata": {
         "description": "The name of the Key Vault"
       }
@@ -88,18 +88,21 @@
     },
     "jwtSecret": {
       "type": "securestring",
+      "defaultValue": "[newGuid()]",
       "metadata": {
         "description": "JWT Secret for authentication"
       }
     },
     "azureAdClientId": {
       "type": "string",
+      "defaultValue": "00000000-0000-0000-0000-000000000000",
       "metadata": {
         "description": "Azure AD Client ID"
       }
     },
     "azureAdClientSecret": {
       "type": "securestring",
+      "defaultValue": "[newGuid()]",
       "metadata": {
         "description": "Azure AD Client Secret"
       }
@@ -120,12 +123,14 @@
     },
     "marketplaceClientId": {
       "type": "string",
+      "defaultValue": "00000000-0000-0000-0000-000000000000",
       "metadata": {
         "description": "Azure Marketplace App Registration Client ID"
       }
     },
     "marketplaceClientSecret": {
       "type": "securestring",
+      "defaultValue": "[newGuid()]",
       "metadata": {
         "description": "Azure Marketplace App Registration Client Secret"
       }
@@ -139,27 +144,13 @@
     },
     "marketplacePublisherId": {
       "type": "string",
+      "defaultValue": "smartcost",
       "metadata": {
         "description": "Azure Marketplace Publisher ID"
       }
     }
   },
   "resources": [
-    {
-      "type": "Microsoft.Insights/components",
-      "apiVersion": "2020-02-02",
-      "name": "[format('{0}-insights', parameters('functionAppName'))]",
-      "location": "[parameters('location')]",
-      "kind": "web",
-      "properties": {
-        "Application_Type": "web",
-        "IngestionMode": "ApplicationInsights",
-        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', parameters('functionAppName')))]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', parameters('functionAppName')))]"
-      ]
-    },
     {
       "type": "Microsoft.OperationalInsights/workspaces",
       "apiVersion": "2022-10-01",
@@ -171,6 +162,21 @@
         },
         "retentionInDays": 30
       }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[format('{0}-insights', parameters('functionAppName'))]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "IngestionMode": "LogAnalytics",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', parameters('functionAppName')))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', parameters('functionAppName')))]"
+      ]
     },
     {
       "type": "Microsoft.Storage/storageAccounts",
@@ -478,25 +484,6 @@
       ]
     },
     {
-      "type": "Microsoft.Web/staticSites",
-      "apiVersion": "2022-09-01",
-      "name": "[parameters('staticWebAppName')]",
-      "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard",
-        "tier": "Standard"
-      },
-      "properties": {
-        "repositoryUrl": "",
-        "branch": "main",
-        "buildProperties": {
-          "appLocation": "/smartcost-dashboard",
-          "apiLocation": "",
-          "outputLocation": "build"
-        }
-      }
-    },
-    {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2022-09-01",
       "name": "[format('{0}-plan', parameters('functionAppName'))]",
@@ -591,14 +578,13 @@
       ]
     },
     {
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2022-04-01",
-      "scope": "[format('Microsoft.DocumentDB/databaseAccounts/{0}', parameters('cosmosAccountName'))]",
-      "name": "[guid(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')), resourceId('Microsoft.Web/sites', parameters('apiAppName')), 'Cosmos DB Built-in Data Contributor')]",
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}', parameters('cosmosAccountName'), guid(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')), resourceId('Microsoft.Web/sites', parameters('apiAppName')), 'sql-contributor'))]",
       "properties": {
-        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002')]",
+        "roleDefinitionId": "[format('{0}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002', resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')))]",
         "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('apiAppName')), '2022-09-01', 'full').identity.principalId]",
-        "principalType": "ServicePrincipal"
+        "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName'))]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', parameters('apiAppName'))]",
@@ -606,14 +592,13 @@
       ]
     },
     {
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2022-04-01",
-      "scope": "[format('Microsoft.DocumentDB/databaseAccounts/{0}', parameters('cosmosAccountName'))]",
-      "name": "[guid(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')), resourceId('Microsoft.Web/sites', parameters('functionAppName')), 'Cosmos DB Built-in Data Contributor')]",
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}', parameters('cosmosAccountName'), guid(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')), resourceId('Microsoft.Web/sites', parameters('functionAppName')), 'sql-contributor'))]",
       "properties": {
-        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002')]",
+        "roleDefinitionId": "[format('{0}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002', resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName')))]",
         "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2022-09-01', 'full').identity.principalId]",
-        "principalType": "ServicePrincipal"
+        "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName'))]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('cosmosAccountName'))]",
@@ -737,13 +722,9 @@
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Web/sites', parameters('apiAppName')), '2022-09-01', 'full').identity.principalId]"
     },
-    "staticWebAppName": {
+    "dashboardInstructions": {
       "type": "string",
-      "value": "[parameters('staticWebAppName')]"
-    },
-    "staticWebAppUrl": {
-      "type": "string",
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName')), '2022-09-01').defaultHostname)]"
+      "value": "⚠️ IMPORTANT: Static Web App is not available in Brazil South.\r\n\r\nTo access the SmartCost dashboard, choose one of these options:\r\n\r\nOPTION 1 - Deploy Static Web App in East US 2 (Recommended):\r\n  1. Go to Azure Portal → Create Static Web App\r\n  2. Location: East US 2\r\n  3. Connect to GitHub repo: smartcost-dashboard folder\r\n  4. Build preset: React\r\n  5. After deploy, configure API URL in app settings:\r\n     REACT_APP_API_URL=${apiApp.properties.defaultHostName}\r\n\r\nOPTION 2 - Deploy to Storage Static Website:\r\n  1. Enable Static Website on storage account: ${storage.name}\r\n  2. Build React app: cd smartcost-dashboard && npm run build\r\n  3. Upload build/ folder to $web container\r\n  4. Access via: https://${storage.name}.z15.web.core.windows.net\r\n\r\nOPTION 3 - Use API directly (for testing):\r\n  API Base URL: https://${apiApp.properties.defaultHostName}\r\n  Health check: https://${apiApp.properties.defaultHostName}/api/health\r\n  Swagger UI: https://${apiApp.properties.defaultHostName}/swagger\r\n"
     },
     "cosmosAccountName": {
       "type": "string",

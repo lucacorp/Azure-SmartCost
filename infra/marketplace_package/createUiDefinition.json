@@ -1,0 +1,61 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "basics": [
+      {
+        "name": "appName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Application Name",
+        "defaultValue": "smartcost",
+        "toolTip": "Base name for all Azure resources (6-20 characters)",
+        "constraints": {
+          "required": true,
+          "regex": "^[a-z0-9]{6,20}$",
+          "validationMessage": "Only lowercase letters and numbers, 6-20 characters"
+        }
+      }
+    ],
+    "steps": [
+      {
+        "name": "azureConfig",
+        "label": "Azure Configuration",
+        "elements": [
+          {
+            "name": "subscriptionInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "SmartCost will analyze costs for the selected subscription. You can add more subscriptions later through the dashboard."
+            }
+          },
+          {
+            "name": "subscriptionId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Azure Subscription ID",
+            "defaultValue": "[subscription().subscriptionId]",
+            "toolTip": "The subscription ID to monitor costs for",
+            "constraints": {
+              "required": true,
+              "regex": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+              "validationMessage": "Please enter a valid Subscription ID"
+            }
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "location": "[location()]",
+      "projectName": "[basics('appName')]",
+      "subscriptionId": "[steps('azureConfig').subscriptionId]",
+      "jwtSecret": "[newGuid()]",
+      "azureAdClientId": "00000000-0000-0000-0000-000000000000",
+      "azureAdClientSecret": "[newGuid()]",
+      "marketplaceClientId": "00000000-0000-0000-0000-000000000000",
+      "marketplaceClientSecret": "[newGuid()]",
+      "marketplacePublisherId": "smartcoast"
+    }
+  }
+}

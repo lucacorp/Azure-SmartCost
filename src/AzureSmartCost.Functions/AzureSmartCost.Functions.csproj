@@ -20,6 +20,8 @@
     <PackageReference Include="Azure.ResourceManager" Version="1.13.0" />
     <PackageReference Include="Azure.ResourceManager.CostManagement" Version="1.0.1" />
     <PackageReference Include="SendGrid" Version="9.29.3" />
+    <PackageReference Include="Stripe.net" Version="45.14.0" />
+    <PackageReference Include="WebPush" Version="1.0.12" />
   </ItemGroup>
   <!-- Shared project temporariamente removido (puxa Cosmos DB) -->
   <!-- BetaSignup não depende do Shared, CollectCostData sim -->

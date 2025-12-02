@@ -1,4 +1,4 @@
-@description('The location for all resources')
+﻿@description('The location for all resources')
 param location string = resourceGroup().location
 
 @description('Environment name (dev, staging, prod)')
@@ -17,13 +17,13 @@ param apiAppName string = '${projectName}-api-${environmentName}-${uniqueString(
 param staticWebAppName string = '${projectName}-web-${environmentName}-${uniqueString(resourceGroup().id)}'
 
 @description('The name of the Storage Account')
-param storageAccountName string = '${projectName}stg${uniqueString(resourceGroup().id)}'
+param storageAccountName string = 'stg${substring(uniqueString(resourceGroup().id), 0, 13)}'
 
 @description('The name of the Cosmos DB Account')
 param cosmosAccountName string = '${projectName}-cosmos-${environmentName}-${uniqueString(resourceGroup().id)}'
 
 @description('The name of the Key Vault')
-param keyVaultName string = '${projectName}-kv-${environmentName}-${uniqueString(resourceGroup().id)}'
+param keyVaultName string = 'kv-${uniqueString(resourceGroup().id)}'
 
 @description('The Azure subscription ID to monitor costs for')
 param subscriptionId string = subscription().subscriptionId
@@ -33,14 +33,14 @@ param appServiceSku string = 'B1'
 
 @description('JWT Secret for authentication')
 @secure()
-param jwtSecret string
+param jwtSecret string = newGuid()
 
 @description('Azure AD Client ID')
-param azureAdClientId string
+param azureAdClientId string = '00000000-0000-0000-0000-000000000000'
 
 @description('Azure AD Client Secret')
 @secure()
-param azureAdClientSecret string
+param azureAdClientSecret string = newGuid()
 
 @description('Azure AD Tenant ID')
 param azureAdTenantId string = tenant().tenantId
@@ -49,29 +49,17 @@ param azureAdTenantId string = tenant().tenantId
 param marketplaceTenantId string = tenant().tenantId
 
 @description('Azure Marketplace App Registration Client ID')
-param marketplaceClientId string
+param marketplaceClientId string = '00000000-0000-0000-0000-000000000000'
 
 @description('Azure Marketplace App Registration Client Secret')
 @secure()
-param marketplaceClientSecret string
+param marketplaceClientSecret string = newGuid()
 
 @description('Azure Marketplace Offer ID')
 param marketplaceOfferId string = 'azure-smartcost'
 
 @description('Azure Marketplace Publisher ID')
-param marketplacePublisherId string
-
-// Application Insights (linked to Log Analytics)
-resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: '${functionAppName}-insights'
-  location: location
-  kind: 'web'
-  properties: {
-    Application_Type: 'web'
-    IngestionMode: 'ApplicationInsights'
-    WorkspaceResourceId: logAnalytics.id
-  }
-}
+param marketplacePublisherId string = 'smartcost'
 
 // Log Analytics Workspace (required for Application Insights)
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
@@ -82,6 +70,19 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
       name: 'PerGB2018'
     }
     retentionInDays: 30
+  }
+}
+
+
+// Application Insights (linked to Log Analytics)
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: '${functionAppName}-insights'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    IngestionMode: 'LogAnalytics'
+    WorkspaceResourceId: logAnalytics.id
   }
 }
 
@@ -371,7 +372,8 @@ resource apiApp 'Microsoft.Web/sites@2022-09-01' = {
   }
 }
 
-// Static Web App for Frontend
+// Static Web App for Frontend (NOT available in Brazil South - deploy separately in eastus2)
+/* 
 resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
   name: staticWebAppName
   location: location
@@ -389,6 +391,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
     }
   }
 }
+*/
 
 // App Service Plan for Functions
 resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
@@ -487,24 +490,24 @@ resource apiAppKeyVaultRole 'Microsoft.Authorization/roleAssignments@2022-04-01'
 }
 
 // Role Assignment - Cosmos DB Built-in Data Contributor for API App
-resource apiAppCosmosRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(cosmosAccount.id, apiApp.id, 'Cosmos DB Built-in Data Contributor')
-  scope: cosmosAccount
+resource apiAppCosmosRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+  parent: cosmosAccount
+  name: guid(cosmosAccount.id, apiApp.id, 'sql-contributor')
   properties: {
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002') // Cosmos DB Built-in Data Contributor
+    roleDefinitionId: '${cosmosAccount.id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002'
     principalId: apiApp.identity.principalId
-    principalType: 'ServicePrincipal'
+    scope: cosmosAccount.id
   }
 }
 
 // Role Assignment - Cosmos DB Built-in Data Contributor for Function App
-resource cosmosContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(cosmosAccount.id, functionApp.id, 'Cosmos DB Built-in Data Contributor')
-  scope: cosmosAccount
+resource cosmosContributorRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+  parent: cosmosAccount
+  name: guid(cosmosAccount.id, functionApp.id, 'sql-contributor')
   properties: {
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', '00000000-0000-0000-0000-000000000002') // Cosmos DB Built-in Data Contributor
+    roleDefinitionId: '${cosmosAccount.id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002'
     principalId: functionApp.identity.principalId
-    principalType: 'ServicePrincipal'
+    scope: cosmosAccount.id
   }
 }
 
@@ -580,8 +583,36 @@ output functionAppPrincipalId string = functionApp.identity.principalId
 output apiAppName string = apiApp.name
 output apiAppUrl string = 'https://${apiApp.properties.defaultHostName}'
 output apiAppPrincipalId string = apiApp.identity.principalId
-output staticWebAppName string = staticWebApp.name
-output staticWebAppUrl string = 'https://${staticWebApp.properties.defaultHostname}'
+
+// Dashboard Access Instructions
+output dashboardInstructions string = '''
+⚠️ IMPORTANT: Static Web App is not available in Brazil South.
+
+To access the SmartCost dashboard, choose one of these options:
+
+OPTION 1 - Deploy Static Web App in East US 2 (Recommended):
+  1. Go to Azure Portal → Create Static Web App
+  2. Location: East US 2
+  3. Connect to GitHub repo: smartcost-dashboard folder
+  4. Build preset: React
+  5. After deploy, configure API URL in app settings:
+     REACT_APP_API_URL=${apiApp.properties.defaultHostName}
+
+OPTION 2 - Deploy to Storage Static Website:
+  1. Enable Static Website on storage account: ${storage.name}
+  2. Build React app: cd smartcost-dashboard && npm run build
+  3. Upload build/ folder to $web container
+  4. Access via: https://${storage.name}.z15.web.core.windows.net
+
+OPTION 3 - Use API directly (for testing):
+  API Base URL: https://${apiApp.properties.defaultHostName}
+  Health check: https://${apiApp.properties.defaultHostName}/api/health
+  Swagger UI: https://${apiApp.properties.defaultHostName}/swagger
+'''
+
+// Static Web App outputs (commented - not available in Brazil South)
+// output staticWebAppName string = staticWebApp.name
+// output staticWebAppUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 output cosmosAccountName string = cosmosAccount.name
 output keyVaultName string = keyVault.name
 output storageAccountName string = storage.name

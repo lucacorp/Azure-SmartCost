@@ -106,6 +106,30 @@ public class Tenant
     public DateTime? TrialExpiresAt { get; set; }
 
     /// <summary>
+    /// Trial end date (from Stripe)
+    /// </summary>
+    [JsonProperty("trialEndDate")]
+    public DateTime? TrialEndDate { get; set; }
+
+    /// <summary>
+    /// Stripe customer ID
+    /// </summary>
+    [JsonProperty("stripeCustomerId")]
+    public string? StripeCustomerId { get; set; }
+
+    /// <summary>
+    /// Stripe subscription ID
+    /// </summary>
+    [JsonProperty("stripeSubscriptionId")]
+    public string? StripeSubscriptionId { get; set; }
+
+    /// <summary>
+    /// Last payment date
+    /// </summary>
+    [JsonProperty("lastPaymentAt")]
+    public DateTime? LastPaymentAt { get; set; }
+
+    /// <summary>
     /// Subscription created date
     /// </summary>
     [JsonProperty("createdAt")]
