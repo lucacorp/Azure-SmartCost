@@ -61,6 +61,8 @@ jobs:
         app_location: "smartcost-dashboard"
         api_location: ""
         output_location: "build"
+        skip_app_build: true
+        app_artifact_location: "smartcost-dashboard/build"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
