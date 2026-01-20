@@ -1,0 +1,3 @@
+[submodule "arm-ttk"]
+	path = arm-ttk
+	url = https://github.com/Azure/arm-ttk.git
