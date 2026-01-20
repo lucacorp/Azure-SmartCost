@@ -41,7 +41,7 @@ Configure os seguintes secrets em **Settings → Secrets and variables → Actio
 
 | Secret Name | Description | How to Get |
 |------------|-------------|-----------|
-| `AZURE_STATIC_WEB_APPS_API_TOKEN` | Azure Static Web Apps deployment token | Azure Portal → Static Web App → Manage deployment token |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_SMARTCOST` | Azure Static Web Apps deployment token | Azure Portal → Static Web App → Manage deployment token |
 | `STATIC_WEB_APP_URL` | Static Web App URL | Azure Portal → Static Web App → URL |
 
 ### Optional - Code Quality
